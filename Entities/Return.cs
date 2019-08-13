@@ -48,5 +48,10 @@ namespace wscore.Entities
         public Notes Notes { get; set; }
     }
 
-    
+    public class TotalAmount
+    {
+        public double AllTotalAmount { get; set; }
+    }
+
+
 }

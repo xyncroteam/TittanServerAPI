@@ -21,7 +21,7 @@ namespace wscore.Controllers
 
         protected int GetUserId()
         {
-            return int.Parse(this.User.Claims.First().Value);
+            return int.Parse(this.User.Claims.First().Value); 
         }
 
         protected string GetUserName()

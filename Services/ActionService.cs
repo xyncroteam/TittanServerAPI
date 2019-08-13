@@ -27,6 +27,8 @@ namespace wscore.Services
         DepositReturn GetDeposit(int DepositId, int userId);
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
+        TerminalReturn UpdateTerminal(TerminalReturn updateTerminal, int userId);
+        TotalAmount getAllTerminalsTotalAmount(int userId);
     }
 
     public class ActionService : IActionService
@@ -850,6 +852,39 @@ namespace wscore.Services
 
             return _eventReturn;
 
+        }
+
+        public TerminalReturn UpdateTerminal(TerminalReturn updateTerminal, int userId)
+        {
+            var _updateTerminal = updateTerminal;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
+                cmd.ExecuteNonQuery();
+            }
+            return _updateTerminal;
+        }
+
+        public TotalAmount getAllTerminalsTotalAmount(int userId)
+        {
+            TotalAmount totalAmount = new TotalAmount();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount from Terminal", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        totalAmount.AllTotalAmount = double.Parse(reader["TotalAmount"].ToString());
+                    }
+                }
+            }
+            return totalAmount;
         }
     }
 }
