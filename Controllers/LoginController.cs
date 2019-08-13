@@ -60,5 +60,13 @@ namespace wscore.Controllers
 
             return Ok(login);
         }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("listUsers")]
+        public IActionResult ListUsers()
+        {
+            var _usersReturn = _loginService.Users(); ;
+            return Ok(_usersReturn);
+        }
     }
 }
