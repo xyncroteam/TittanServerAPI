@@ -39,6 +39,7 @@ namespace wscore.Controllers
             login.Token = user.Token;
 
             return Ok(login);
+
         }
 
         [AllowAnonymous]
