@@ -341,5 +341,21 @@ namespace wscore.Controllers
             return Ok(_eventReturn);
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("updateTerminal")]
+        public IActionResult UpdateTerminal([FromBody]TerminalReturn updateTerminal)
+        {
+            var _editReturn = _actionService.UpdateTerminal(updateTerminal, GetUserId());
+            return Ok();
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("allTerminalsTotalAmount")]
+        public IActionResult GetAllTerminaslTotalAmount()
+        {
+            var _allTotalTerminaslAmountReturn = _actionService.getAllTerminalsTotalAmount(GetUserId());
+            return Ok(_allTotalTerminaslAmountReturn);
+        }
+
     }
 }
