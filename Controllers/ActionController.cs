@@ -25,7 +25,7 @@ namespace wscore.Controllers
 
         protected string GetUserName()
         {
-            return this.User.Claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).SingleOrDefault();
+            return this.User.Claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).SingleOrDefault(); 
         }
 
         public ActionController(IActionService actionService)
