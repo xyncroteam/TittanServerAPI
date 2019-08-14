@@ -19,9 +19,11 @@ namespace wscore.Services
     public interface IActionService
     {
         DepositReturn Deposit(int terminalId, string number, int total, int userId);
+        DepositReturn DepositTCP(int terminalId, int userId);
         ActionReturn OpenDoor(int terminalId, int userId);
         ActionReturn OpenDoorTCP(int terminalId, int userId);
         ActionReturn Reboot(int terminalId, int userId);
+        ActionReturn RebootTCP(int terminalId, int userId);
         TerminalReturn Status(int terminalId, int userId);
         List<TerminalReturn> Terminals(int userId);
         DepositReturn GetDeposit(int DepositId, int userId);
@@ -424,6 +426,62 @@ namespace wscore.Services
             return _eventReturn;
         }
 
+        public ActionReturn RebootTCP(int terminalId, int userId)
+        {
+            var _terminal = GetTerminal(terminalId);
+
+            var _event = new Event();
+
+            _event.TerminalId = terminalId;
+
+            if (_terminal != null)
+            {
+
+                _event.EventTypeId = 13;
+                _event.EventType = EventType.Reboot;
+                _event.UserId = userId;
+                _event = EventInsert(_event);
+
+                if (IsOnline(_terminal.IP))
+                {
+
+                    try
+                    {
+
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+                        clienttcp.WriteLineAndGetReply("reset", TimeSpan.FromSeconds(1));
+
+                        _event.Status = EventStatus.Successful;
+                        _event = EventUpdate(_event);
+                    }
+                    catch
+                    {
+                        _event.Status = EventStatus.Busy;
+                        _event = EventUpdate(_event);
+                    }
+                }
+                else
+                {
+                    _event.Status = EventStatus.OffLine;
+                    _event = EventUpdate(_event);
+                }
+            }
+            else
+            {
+                _event.Status = EventStatus.Error;
+            }
+
+            var _eventReturn = new ActionReturn();
+            _eventReturn.TerminalId = _event.TerminalId;
+            _eventReturn.EventType = _event.EventType.ToString();
+            _eventReturn.Status = _event.Status.ToString();
+
+            return _eventReturn;
+        }
+
         public ActionReturn OpenDoorTCP(int terminalId, int userId)
         {
             var _terminal = GetTerminal(terminalId);
@@ -439,37 +497,25 @@ namespace wscore.Services
                 _event.UserId = userId;
                 _event = EventInsert(_event);
 
-                SimpleTcpClient clienttcp;
-                clienttcp = new SimpleTcpClient();
-                clienttcp.StringEncoder = Encoding.UTF8;
-                clienttcp.Connect("192.168.1.5", Convert.ToInt32("8910"));
-                clienttcp.WriteLineAndGetReply("hola desde el server", TimeSpan.FromSeconds(3));
-
+                
                 if (IsOnline(_terminal.IP))
                 {
-
-
-
-                    string _url = "http://" + _terminal.IP + "/open.php";
-
                     try
                     {
-                        using (var client = new HttpClient())
-                        {
-                            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                            var response = client.GetStringAsync(_url).Result;
 
-                        }
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+                        clienttcp.WriteLineAndGetReply("opendoor", TimeSpan.FromSeconds(1));
 
                         _event.Status = EventStatus.Successful;
                         _event = EventUpdate(_event);
-
                     }
                     catch
                     {
-                        _event.Status = EventStatus.Error;
+                        _event.Status = EventStatus.Busy;
                         _event = EventUpdate(_event);
-
                     }
                 }
                 else
@@ -634,6 +680,85 @@ namespace wscore.Services
             _depositReturn.Date = DateTime.Now.ToString();
             _depositReturn.DepositId = _deposit.DepositId;
             _depositReturn.Number = _deposit.DepositNumber;
+            _depositReturn.Status = _deposit.Status.ToString();
+            _depositReturn.TerminalId = _deposit.TerminalId;
+
+            return _depositReturn;
+        }
+
+        public DepositReturn DepositTCP(int terminalId, int userId)
+        {
+            var _terminal = GetTerminal(terminalId);
+
+            var _event = new Event();
+
+            _event.TerminalId = terminalId;
+            _event.EventTypeId = 1;
+            _event.EventType = EventType.Deposit;
+            _event.UserId = userId;
+            _event = EventInsert(_event);
+
+            var _deposit = new Deposit();
+            _deposit.EventId = _event.EventId;
+            //_deposit.DepositNumber = number;
+            _deposit.Amount = 0;
+            _deposit.TerminalId = terminalId;
+
+            if (_terminal != null)
+            {
+
+                if (IsOnline(_terminal.IP))
+                {
+
+                    try
+                    {
+
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+
+                        _deposit.Status = DepositStatus.Sending;
+                        _deposit = DepositInsert(_deposit);
+
+                        _event.Status = EventStatus.Successful;
+                        _event = EventUpdate(_event);
+
+                        var resp = clienttcp.WriteLineAndGetReply("deposit," + _deposit.DepositId.ToString(), TimeSpan.FromSeconds(2));
+
+                        if (resp.MessageString != null)
+                        {
+                            if (resp.MessageString.Contains("processing")){
+                                _deposit.Status = DepositStatus.Processing;
+                                _deposit = DepositUpdate(_deposit);
+                            }
+                            else {
+                                _deposit.Status = DepositStatus.Error;
+                                _deposit = DepositUpdate(_deposit);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        _event.Status = EventStatus.Busy;
+                        _event = EventUpdate(_event);
+                    }
+                }
+                else
+                {
+                    _event.Status = EventStatus.OffLine;
+                    _event = EventUpdate(_event);
+                    _deposit.Status = DepositStatus.OffLine;
+                    _deposit = DepositUpdate(_deposit);
+                }
+
+            }
+
+            DepositReturn _depositReturn = new DepositReturn();
+            _depositReturn.Amount = _deposit.Amount;
+            _depositReturn.Date = DateTime.Now.ToString();
+            _depositReturn.DepositId = _deposit.DepositId;
+           // _depositReturn.Number = _deposit.DepositNumber;
             _depositReturn.Status = _deposit.Status.ToString();
             _depositReturn.TerminalId = _deposit.TerminalId;
 
