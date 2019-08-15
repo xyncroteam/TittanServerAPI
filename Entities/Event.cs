@@ -15,7 +15,8 @@
     {
         Successful,
         Error,
-        OffLine
+        OffLine,
+        Busy
     }
 
     public enum EventType
