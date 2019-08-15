@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
+using newapi.Helpers;
 using Newtonsoft.Json.Linq;
 using SimpleTCP;
 using System;
@@ -27,7 +28,7 @@ namespace wscore.Services
         DepositReturn GetDeposit(int DepositId, int userId);
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
-        TerminalReturn UpdateTerminal(TerminalReturn updateTerminal, int userId);
+        void UpdateTerminal(UpdateTerminalReturn updateTerminal);
         TotalAmount getAllTerminalsTotalAmount(int userId);
     }
 
@@ -112,6 +113,42 @@ namespace wscore.Services
             }
 
             return _terminal;
+        }
+
+        private Terminal GetTerminalByName(string name)
+        {
+            Terminal _terminal = null; ;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select * from Terminal where Name= '" + name.ToString() + "' " , conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _terminal = new Terminal();
+                        _terminal.Name = reader["Name"].ToString();
+                        _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                    }
+                }
+            }
+            return _terminal;
+        }
+
+        public bool isNameUnique(string name)
+        {
+            var isUnique = GetTerminalByName(name);
+
+            if (isUnique == null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private Notes GetTerminalNotes(int terminalId)
@@ -736,6 +773,7 @@ namespace wscore.Services
                 _statusReturn.TotalAmount = _terminal.TotalAmount;
                 _statusReturn.Notes = GetTerminalNotes(_terminal.TerminalId);
             }
+            //missing validation when terminal does not exist  shoudl trow and errror.
             else
             {
                 _statusReturn.TerminalId = terminalId;
@@ -854,18 +892,52 @@ namespace wscore.Services
 
         }
 
-        public TerminalReturn UpdateTerminal(TerminalReturn updateTerminal, int userId)
+        public void UpdateTerminal(UpdateTerminalReturn updateTerminal)
         {
-            var _updateTerminal = updateTerminal;
-
-            using (MySqlConnection conn = GetConnection())
+            //check if terminal id exist , check if terminal name does not exist, check if values are empty
+            if (updateTerminal == null)
             {
-                conn.Open();
-                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
-                cmd.ExecuteNonQuery();
+                throw new AppExceptions("Terminal Id is required");
             }
-            return _updateTerminal;
+            if (string.IsNullOrEmpty(updateTerminal.Name))
+            {
+                throw new AppExceptions("Name is required");
+            }
+            
+            else
+            {
+                var _terminal = GetTerminal(updateTerminal.TerminalId);
+
+                var _updateTerminal = updateTerminal;
+
+                if (_terminal == null)
+                {
+                    throw new AppExceptions("Terminal not found");
+                }
+
+                bool value = isNameUnique(updateTerminal.Name);
+
+                if(updateTerminal.Name != _terminal.Name)
+                {
+                    if (!value)
+                    {
+                        throw new AppExceptions("Terminal name already exist");
+                    }
+                }
+
+                UpdateSQl(_updateTerminal);
+            }      
         }
+
+        private void UpdateSQl(UpdateTerminalReturn _updateTerminal)
+        {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
+                    cmd.ExecuteNonQuery();
+                }
+            }
 
         public TotalAmount getAllTerminalsTotalAmount(int userId)
         {

@@ -9,6 +9,7 @@ using wscore.Entities;
 using wscore.Helpers;
 using wscore.Services;
 
+
 namespace wscore.Controllers
 {
     [Authorize]
@@ -16,6 +17,7 @@ namespace wscore.Controllers
     [Route("user")]
     public class LoginController : Controller
     {
+       
         private ILoginService _loginService;
 
         public LoginController(ILoginService loginService)
@@ -68,5 +70,64 @@ namespace wscore.Controllers
             var _usersReturn = _loginService.Users(); ;
             return Ok(_usersReturn);
         }
+
+        [Authorize(Roles = "Admin, User")]
+        [HttpPost("getUser")]
+        public IActionResult GetUser([FromBody]UserReturn statusParam)
+        {
+            try
+            {
+                var _userReturn = _loginService.getUserById(statusParam);
+                return Ok(_userReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+       // [Authorize(Roles = "Admin, User")]
+        [HttpPost("register")]
+        public IActionResult Register([FromBody]RegisterUser statusParam)
+        {
+            try
+            {
+                //if (ModelState.IsValid)
+                //{
+                   // var result =  _userManager.CreateAsync(statusParam, statusParam.Password);
+
+                    //if (result.IsCompleted)
+                    //{
+                        // _logger.LogInformation("User created a new account with password.");
+                        return Ok("User register successfully");
+                    //}
+                    //else
+                    //{
+                    //    //AddErrors(result);
+                    //    return BadRequest("Invalid data");
+                    //}                      
+                    
+                //}
+                //else
+                //{
+                //    return BadRequest("Invalid data");
+                //}
+               
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        //private void AddErrors(IdentityResult result)
+        //{
+        //    foreach (var error in result.Errors)
+        //    {
+        //        ModelState.AddModelError(string.Empty, error.Description);
+        //    }
+        //}
+
+
     }
 }
