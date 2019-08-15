@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
+using newapi.Helpers;
 using Newtonsoft.Json.Linq;
 using SimpleTCP;
 using System;
@@ -19,15 +20,17 @@ namespace wscore.Services
     public interface IActionService
     {
         DepositReturn Deposit(int terminalId, string number, int total, int userId);
+        DepositReturn DepositTCP(int terminalId, int userId);
         ActionReturn OpenDoor(int terminalId, int userId);
         ActionReturn OpenDoorTCP(int terminalId, int userId);
         ActionReturn Reboot(int terminalId, int userId);
+        ActionReturn RebootTCP(int terminalId, int userId);
         TerminalReturn Status(int terminalId, int userId);
         List<TerminalReturn> Terminals(int userId);
         DepositReturn GetDeposit(int DepositId, int userId);
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
-        TerminalReturn UpdateTerminal(TerminalReturn updateTerminal, int userId);
+        void UpdateTerminal(UpdateTerminalReturn updateTerminal);
         TotalAmount getAllTerminalsTotalAmount(int userId);
     }
 
@@ -112,6 +115,42 @@ namespace wscore.Services
             }
 
             return _terminal;
+        }
+
+        private Terminal GetTerminalByName(string name)
+        {
+            Terminal _terminal = null; ;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select * from Terminal where Name= '" + name.ToString() + "' " , conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _terminal = new Terminal();
+                        _terminal.Name = reader["Name"].ToString();
+                        _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                    }
+                }
+            }
+            return _terminal;
+        }
+
+        public bool isNameUnique(string name)
+        {
+            var isUnique = GetTerminalByName(name);
+
+            if (isUnique == null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private Notes GetTerminalNotes(int terminalId)
@@ -424,6 +463,62 @@ namespace wscore.Services
             return _eventReturn;
         }
 
+        public ActionReturn RebootTCP(int terminalId, int userId)
+        {
+            var _terminal = GetTerminal(terminalId);
+
+            var _event = new Event();
+
+            _event.TerminalId = terminalId;
+
+            if (_terminal != null)
+            {
+
+                _event.EventTypeId = 13;
+                _event.EventType = EventType.Reboot;
+                _event.UserId = userId;
+                _event = EventInsert(_event);
+
+                if (IsOnline(_terminal.IP))
+                {
+
+                    try
+                    {
+
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+                        clienttcp.WriteLineAndGetReply("reset", TimeSpan.FromSeconds(1));
+
+                        _event.Status = EventStatus.Successful;
+                        _event = EventUpdate(_event);
+                    }
+                    catch
+                    {
+                        _event.Status = EventStatus.Busy;
+                        _event = EventUpdate(_event);
+                    }
+                }
+                else
+                {
+                    _event.Status = EventStatus.OffLine;
+                    _event = EventUpdate(_event);
+                }
+            }
+            else
+            {
+                _event.Status = EventStatus.Error;
+            }
+
+            var _eventReturn = new ActionReturn();
+            _eventReturn.TerminalId = _event.TerminalId;
+            _eventReturn.EventType = _event.EventType.ToString();
+            _eventReturn.Status = _event.Status.ToString();
+
+            return _eventReturn;
+        }
+
         public ActionReturn OpenDoorTCP(int terminalId, int userId)
         {
             var _terminal = GetTerminal(terminalId);
@@ -439,37 +534,25 @@ namespace wscore.Services
                 _event.UserId = userId;
                 _event = EventInsert(_event);
 
-                SimpleTcpClient clienttcp;
-                clienttcp = new SimpleTcpClient();
-                clienttcp.StringEncoder = Encoding.UTF8;
-                clienttcp.Connect("192.168.1.5", Convert.ToInt32("8910"));
-                clienttcp.WriteLineAndGetReply("hola desde el server", TimeSpan.FromSeconds(3));
-
+                
                 if (IsOnline(_terminal.IP))
                 {
-
-
-
-                    string _url = "http://" + _terminal.IP + "/open.php";
-
                     try
                     {
-                        using (var client = new HttpClient())
-                        {
-                            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                            var response = client.GetStringAsync(_url).Result;
 
-                        }
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+                        clienttcp.WriteLineAndGetReply("opendoor", TimeSpan.FromSeconds(1));
 
                         _event.Status = EventStatus.Successful;
                         _event = EventUpdate(_event);
-
                     }
                     catch
                     {
-                        _event.Status = EventStatus.Error;
+                        _event.Status = EventStatus.Busy;
                         _event = EventUpdate(_event);
-
                     }
                 }
                 else
@@ -640,6 +723,85 @@ namespace wscore.Services
             return _depositReturn;
         }
 
+        public DepositReturn DepositTCP(int terminalId, int userId)
+        {
+            var _terminal = GetTerminal(terminalId);
+
+            var _event = new Event();
+
+            _event.TerminalId = terminalId;
+            _event.EventTypeId = 1;
+            _event.EventType = EventType.Deposit;
+            _event.UserId = userId;
+            _event = EventInsert(_event);
+
+            var _deposit = new Deposit();
+            _deposit.EventId = _event.EventId;
+            //_deposit.DepositNumber = number;
+            _deposit.Amount = 0;
+            _deposit.TerminalId = terminalId;
+
+            if (_terminal != null)
+            {
+
+                if (IsOnline(_terminal.IP))
+                {
+
+                    try
+                    {
+
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+
+                        _deposit.Status = DepositStatus.Sending;
+                        _deposit = DepositInsert(_deposit);
+
+                        _event.Status = EventStatus.Successful;
+                        _event = EventUpdate(_event);
+
+                        var resp = clienttcp.WriteLineAndGetReply("deposit," + _deposit.DepositId.ToString(), TimeSpan.FromSeconds(2));
+
+                        if (resp.MessageString != null)
+                        {
+                            if (resp.MessageString.Contains("processing")){
+                                _deposit.Status = DepositStatus.Processing;
+                                _deposit = DepositUpdate(_deposit);
+                            }
+                            else {
+                                _deposit.Status = DepositStatus.Error;
+                                _deposit = DepositUpdate(_deposit);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        _event.Status = EventStatus.Busy;
+                        _event = EventUpdate(_event);
+                    }
+                }
+                else
+                {
+                    _event.Status = EventStatus.OffLine;
+                    _event = EventUpdate(_event);
+                    _deposit.Status = DepositStatus.OffLine;
+                    _deposit = DepositUpdate(_deposit);
+                }
+
+            }
+
+            DepositReturn _depositReturn = new DepositReturn();
+            _depositReturn.Amount = _deposit.Amount;
+            _depositReturn.Date = DateTime.Now.ToString();
+            _depositReturn.DepositId = _deposit.DepositId;
+           // _depositReturn.Number = _deposit.DepositNumber;
+            _depositReturn.Status = _deposit.Status.ToString();
+            _depositReturn.TerminalId = _deposit.TerminalId;
+
+            return _depositReturn;
+        }
+
         public TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId)
         {
             TerminalReturn _statusReturn = new TerminalReturn();
@@ -736,6 +898,7 @@ namespace wscore.Services
                 _statusReturn.TotalAmount = _terminal.TotalAmount;
                 _statusReturn.Notes = GetTerminalNotes(_terminal.TerminalId);
             }
+            //missing validation when terminal does not exist  shoudl trow and errror.
             else
             {
                 _statusReturn.TerminalId = terminalId;
@@ -854,18 +1017,52 @@ namespace wscore.Services
 
         }
 
-        public TerminalReturn UpdateTerminal(TerminalReturn updateTerminal, int userId)
+        public void UpdateTerminal(UpdateTerminalReturn updateTerminal)
         {
-            var _updateTerminal = updateTerminal;
-
-            using (MySqlConnection conn = GetConnection())
+            //check if terminal id exist , check if terminal name does not exist, check if values are empty
+            if (updateTerminal == null)
             {
-                conn.Open();
-                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
-                cmd.ExecuteNonQuery();
+                throw new AppExceptions("Terminal Id is required");
             }
-            return _updateTerminal;
+            if (string.IsNullOrEmpty(updateTerminal.Name))
+            {
+                throw new AppExceptions("Name is required");
+            }
+            
+            else
+            {
+                var _terminal = GetTerminal(updateTerminal.TerminalId);
+
+                var _updateTerminal = updateTerminal;
+
+                if (_terminal == null)
+                {
+                    throw new AppExceptions("Terminal not found");
+                }
+
+                bool value = isNameUnique(updateTerminal.Name);
+
+                if(updateTerminal.Name != _terminal.Name)
+                {
+                    if (!value)
+                    {
+                        throw new AppExceptions("Terminal name already exist");
+                    }
+                }
+
+                UpdateSQl(_updateTerminal);
+            }      
         }
+
+        private void UpdateSQl(UpdateTerminalReturn _updateTerminal)
+        {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
+                    cmd.ExecuteNonQuery();
+                }
+            }
 
         public TotalAmount getAllTerminalsTotalAmount(int userId)
         {

@@ -1,4 +1,6 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
+
 namespace wscore.Entities
 {
     public class ActionReturn
@@ -46,6 +48,16 @@ namespace wscore.Entities
         public int TimeOff { get; set; }
         public int TotalAmount { get; set; }
         public Notes Notes { get; set; }
+    }
+
+    public class UpdateTerminalReturn
+    {
+       // [Required]
+        public int TerminalId { get; set; }
+        public string Description { get; set; }
+        public string Address { get; set; }
+       // [Required]
+        public string Name { get; set; }
     }
 
     public class TotalAmount

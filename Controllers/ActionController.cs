@@ -39,7 +39,7 @@ namespace wscore.Controllers
         [HttpPost("opendoorDemo")]
         public IActionResult OpenDoorDemo([FromBody]Event eventParam)
         {
-            
+
             ActionReturn _eventReturn = new ActionReturn();
             _eventReturn.EventType = "OpenDoor";
             _eventReturn.Status = "OnLine";
@@ -83,7 +83,7 @@ namespace wscore.Controllers
                 notes.Note100 = 50;
                 notes.Note20 = 36;
                 notes.Note5 = 20;
-                notes.Note50 = 20; 
+                notes.Note50 = 20;
 
                 _statusReturn.TerminalId = 99;
                 _statusReturn.Status = "OnLine";
@@ -101,11 +101,11 @@ namespace wscore.Controllers
                 Notes notes = new Notes();
 
                 notes.Note1 = 183;
-                notes.Note10 = 57; 
-                notes.Note100 = 150; 
-                notes.Note20 = 40; 
-                notes.Note5 = 220; 
-                notes.Note50 = 78; 
+                notes.Note10 = 57;
+                notes.Note100 = 150;
+                notes.Note20 = 40;
+                notes.Note5 = 220;
+                notes.Note50 = 78;
 
                 _statusReturn.TerminalId = 2;
                 _statusReturn.Status = "OffLine";
@@ -122,9 +122,9 @@ namespace wscore.Controllers
             {
                 Notes notes = new Notes();
 
-               
+
                 notes.Note100 = 1082;
-               
+
                 notes.Note50 = 557;
 
                 _statusReturn.TerminalId = 3;
@@ -145,7 +145,7 @@ namespace wscore.Controllers
 
                 notes.Note20 = 1822;
 
-                
+
 
                 _statusReturn.TerminalId = 4;
                 _statusReturn.Status = "OnLine";
@@ -209,7 +209,7 @@ namespace wscore.Controllers
             _terminal2.Name = "Panera Bread";
             _terminal2.Description = "10001 Cleary Blvd, Plantation, FL 33324";
             _terminal2.TotalAmount = 21553;
-            
+
 
             TerminalReturn _terminal3 = new TerminalReturn();
 
@@ -220,7 +220,7 @@ namespace wscore.Controllers
             _terminal3.Name = "Publix Super Market";
             _terminal3.Description = "13700 W State Rd 84, Davie, FL 33325";
             _terminal3.TotalAmount = 136050;
-            
+
 
             TerminalReturn _terminal4 = new TerminalReturn();
 
@@ -231,7 +231,7 @@ namespace wscore.Controllers
             _terminal4.Name = "CVS Weston";
             _terminal4.Description = "1120 Weston Rd, Weston, FL 33326";
             _terminal4.TotalAmount = 36440;
-           
+
 
             TerminalReturn _terminal5 = new TerminalReturn();
 
@@ -292,7 +292,7 @@ namespace wscore.Controllers
         public IActionResult UpdateDepositTimeOff([FromBody]TerminalReturn eventParam)
         {
             var _eventReturn = _actionService.UpdateDepositTimeOff(eventParam.TerminalId, eventParam.TimeOff, GetUserId());
-           
+
             return Ok(_eventReturn);
         }
 
@@ -343,10 +343,17 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("updateTerminal")]
-        public IActionResult UpdateTerminal([FromBody]TerminalReturn updateTerminal)
+        public IActionResult UpdateTerminal([FromBody]UpdateTerminalReturn updateTerminal)
         {
-            var _editReturn = _actionService.UpdateTerminal(updateTerminal, GetUserId());
-            return Ok();
+            try
+            {
+                _actionService.UpdateTerminal(updateTerminal);
+                return Ok("Data updated succesfully");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [Authorize(Roles = "Admin,User")]
@@ -359,3 +366,4 @@ namespace wscore.Controllers
 
     }
 }
+
