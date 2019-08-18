@@ -9,4 +9,9 @@ namespace wscore.Entities
         public string Token { get; set; }
         
     }
+    public class Rols
+    {
+        public int Id { get; set;  }
+        public string RolName { get; set; } 
+    }
 }

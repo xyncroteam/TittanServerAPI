@@ -364,6 +364,8 @@ namespace wscore.Controllers
             return Ok(_allTotalTerminaslAmountReturn);
         }
 
+      
+
     }
 }
 

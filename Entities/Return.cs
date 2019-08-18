@@ -63,6 +63,7 @@ namespace wscore.Entities
     public class TotalAmount
     {
         public double AllTotalAmount { get; set; }
+        public int totalTerminals { get; set; }
     }
 
 

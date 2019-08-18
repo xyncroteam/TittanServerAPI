@@ -36,11 +36,11 @@ namespace wscore.Services
 
     public class ActionService : IActionService
     {
-        
+
         public ActionService(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
-            
+
         }
 
         #region Private
@@ -124,7 +124,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select * from Terminal where Name= '" + name.ToString() + "' " , conn);
+                MySqlCommand cmd = new MySqlCommand("select * from Terminal where Name= '" + name.ToString() + "' ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -167,7 +167,7 @@ namespace wscore.Services
                     while (reader.Read())
                     {
                         _notes = new Notes();
-                        _notes.Note1= int.Parse(reader["1"].ToString());
+                        _notes.Note1 = int.Parse(reader["1"].ToString());
                         _notes.Note5 = int.Parse(reader["5"].ToString());
                         _notes.Note10 = int.Parse(reader["10"].ToString());
                         _notes.Note20 = int.Parse(reader["20"].ToString());
@@ -344,10 +344,10 @@ namespace wscore.Services
             return _deposit;
         }
 
-        
+
         private Deposit GetBills(Deposit Deposit)
         {
-            
+
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
@@ -534,7 +534,7 @@ namespace wscore.Services
                 _event.UserId = userId;
                 _event = EventInsert(_event);
 
-                
+
                 if (IsOnline(_terminal.IP))
                 {
                     try
@@ -672,7 +672,7 @@ namespace wscore.Services
                                 _event = EventUpdate(_event);
                                 _deposit.Status = DepositStatus.Processing;
                                 _deposit = DepositUpdate(_deposit);
-                               
+
                             }
                             else if (response == DepositStatus.Error.ToString())
                             {
@@ -680,7 +680,7 @@ namespace wscore.Services
                                 _event = EventUpdate(_event);
                                 _deposit.Status = DepositStatus.Error;
                                 _deposit = DepositUpdate(_deposit);
-                               
+
                             }
                             else if (response == DepositStatus.Busy.ToString())
                             {
@@ -688,7 +688,7 @@ namespace wscore.Services
                                 _event = EventUpdate(_event);
                                 _deposit.Status = DepositStatus.Busy;
                                 _deposit = DepositUpdate(_deposit);
-                               
+
                             }
                         }
 
@@ -699,7 +699,7 @@ namespace wscore.Services
                         _event = EventUpdate(_event);
                         _deposit.Status = DepositStatus.Error;
                         _deposit = DepositUpdate(_deposit);
-                       
+
                     }
                 }
                 else
@@ -765,11 +765,13 @@ namespace wscore.Services
 
                         if (resp.MessageString != null)
                         {
-                            if (resp.MessageString.Contains("processing")){
+                            if (resp.MessageString.Contains("processing"))
+                            {
                                 _deposit.Status = DepositStatus.Processing;
                                 _deposit = DepositUpdate(_deposit);
                             }
-                            else {
+                            else
+                            {
                                 _deposit.Status = DepositStatus.Error;
                                 _deposit = DepositUpdate(_deposit);
                             }
@@ -795,7 +797,7 @@ namespace wscore.Services
             _depositReturn.Amount = _deposit.Amount;
             _depositReturn.Date = DateTime.Now.ToString();
             _depositReturn.DepositId = _deposit.DepositId;
-           // _depositReturn.Number = _deposit.DepositNumber;
+            // _depositReturn.Number = _deposit.DepositNumber;
             _depositReturn.Status = _deposit.Status.ToString();
             _depositReturn.TerminalId = _deposit.TerminalId;
 
@@ -861,19 +863,19 @@ namespace wscore.Services
                     r.Bills = t.Notes;
                     r.CashBoxDoor = t.CashBoxDoor;
                     r.Description = t.Description;
-                   /* if (IsOnline(t.IP))
-                        r.Status = Entities.TerminalStatus.Online.ToString();
-                    else
-                        r.Status = Entities.TerminalStatus.Offline.ToString();*/
+                    /* if (IsOnline(t.IP))
+                         r.Status = Entities.TerminalStatus.Online.ToString();
+                     else
+                         r.Status = Entities.TerminalStatus.Offline.ToString();*/
                     r.TerminalDoor = t.TerminalDoor;
                     r.TimeOff = t.TimeOff;
                     r.TotalAmount = t.TotalAmount;
-                    
+
                     _listReturn.Add(r);
                 }
-                
+
             }
-            
+
             return _listReturn;
         }
 
@@ -944,7 +946,7 @@ namespace wscore.Services
 
             if (_deposit != null)
             {
-               
+
                 if ((_deposit.UserId == userId) & (_deposit.Status == DepositStatus.Processing) & (_deposit.TerminalId == TerminalId))
                 {
 
@@ -1006,7 +1008,7 @@ namespace wscore.Services
                 _event.Status = EventStatus.Error;
                 _event = EventUpdate(_event);
             }
-            
+
 
             var _eventReturn = new ActionReturn();
             _eventReturn.TerminalId = _event.TerminalId;
@@ -1028,7 +1030,7 @@ namespace wscore.Services
             {
                 throw new AppExceptions("Name is required");
             }
-            
+
             else
             {
                 var _terminal = GetTerminal(updateTerminal.TerminalId);
@@ -1042,7 +1044,7 @@ namespace wscore.Services
 
                 bool value = isNameUnique(updateTerminal.Name);
 
-                if(updateTerminal.Name != _terminal.Name)
+                if (updateTerminal.Name != _terminal.Name)
                 {
                     if (!value)
                     {
@@ -1051,18 +1053,18 @@ namespace wscore.Services
                 }
 
                 UpdateSQl(_updateTerminal);
-            }      
+            }
         }
 
         private void UpdateSQl(UpdateTerminalReturn _updateTerminal)
         {
-                using (MySqlConnection conn = GetConnection())
-                {
-                    conn.Open();
-                    MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
-                    cmd.ExecuteNonQuery();
-                }
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
+                cmd.ExecuteNonQuery();
             }
+        }
 
         public TotalAmount getAllTerminalsTotalAmount(int userId)
         {
@@ -1071,13 +1073,14 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount from Terminal", conn);
+                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount, count(*) as terminalTotal from Terminal", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
                         totalAmount.AllTotalAmount = double.Parse(reader["TotalAmount"].ToString());
+                        totalAmount.totalTerminals = int.Parse(reader["terminalTotal"].ToString());
                     }
                 }
             }
