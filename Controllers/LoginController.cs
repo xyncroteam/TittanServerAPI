@@ -86,7 +86,7 @@ namespace wscore.Controllers
             }
         }
 
-        // [Authorize(Roles = "Admin, User")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPost("register")]
         public IActionResult Register([FromBody]RegisterUserRequest statusParam)
         {
@@ -107,6 +107,8 @@ namespace wscore.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("getAllRoles")]
