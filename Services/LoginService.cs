@@ -303,7 +303,6 @@ namespace wscore.Services
         {
             _appSettings = appSettings.Value;
         }
-        //need to verify the authenticate whith the hash
         public User Authenticate(string username, string password)
         {
 
@@ -311,6 +310,8 @@ namespace wscore.Services
 
             if (user == null)
                 return null;
+            //here i need to add to verify if password is equal to hash password
+
 
             // authentication successful so generate jwt token
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -436,7 +437,6 @@ namespace wscore.Services
                 {
                     InserUserRole(_insert.Id, rolId); //this functions insert the role for the user created
                 }
-
             }
         }
 
