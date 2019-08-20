@@ -168,6 +168,34 @@ namespace wscore.Services
             }
             return user;
         }
+        //function used when user get updated
+        private User GetUserByIdIncludePassword(int? userId)
+        {
+            User user = null;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select a.UserId, a.UserName, a.FirstName, a.LastName, a.Email, a.Description, a.Password, a.Key, c.Name from User a join UserGroup b on a.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where  a.UserId='" + userId + "'", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        user = new User();
+                        user.Id = Convert.ToInt32(reader["UserId"]);
+                        user.Username = reader["UserName"].ToString();
+                        user.FirstName = reader["FirstName"].ToString();
+                        user.LastName = reader["LastName"].ToString();
+                        user.Email = reader["Email"].ToString();
+                        user.Group = reader["Name"].ToString();
+                        user.Password = reader["Password"].ToString();
+                        user.Key = reader["Key"].ToString();
+                    }
+                }
+            }
+            return user;
+        }
 
         private User GetUserByUsername(string userName)
         {
@@ -428,7 +456,7 @@ namespace wscore.Services
             }
             else
             {
-                var user = GetUserById(statusParam.Id);
+                var user = GetUserByIdIncludePassword(statusParam.Id);
                 var _updateUser = statusParam;
 
                 if (user == null)
@@ -469,6 +497,7 @@ namespace wscore.Services
             }
 
         }
+        #region SQl functions for updating and inserting users
 
         private void InsertSQl(User _insertUser, int rolId)
         {
@@ -506,13 +535,13 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-               
+
                 MySqlCommand cmd = new MySqlCommand("UPDATE User u1, UserGroup g2 " +
                 " SET u1.FirstName = '" + user.FirstName + "' , u1.LastName = '" + user.LastName + "', u1.UserName= '" + user.Username + "' , u1.Password = '" + user.Password + "', u1.Key= '" + user.Key + "', u1.Email= '" + user.Email + "', u1.Description = '" + user.Description + "', g2.GroupId = '" + user.GroupId + "' WHERE u1.UserId = '" + user.Id.ToString() + "' and g2.UserId ='" + user.Id.ToString() + "';", conn);
                 cmd.ExecuteNonQuery();
             }
         }
-
+        #endregion
 
         //later i need to fix it because the return is not rigth should return or object of all bool
         public bool isUserUnique(string username, string email)

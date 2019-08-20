@@ -114,6 +114,10 @@ namespace wscore.Controllers
         {
             try
             {
+                if (string.IsNullOrEmpty(statusParam.Password))
+                {
+                    ModelState.Remove("Password");
+                }
                 if (ModelState.IsValid)
                 {
                     _loginService.UpdateUser(statusParam);
