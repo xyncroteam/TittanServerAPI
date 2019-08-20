@@ -15,6 +15,7 @@ namespace wscore.Entities
         public string Token { get; set; }
         public string Group { get; set; }
         public string Description { get; set; }
+        public int GroupId { get; set; }    //used to updating groupId
     }
 
     public class UserReturn
@@ -28,10 +29,10 @@ namespace wscore.Entities
         public string Description { get; set; }
     }
 
-    public class RegisterUserRequest
+    public class UserRequest
     {
         //[Required]
-        //public int Id { get; set; }
+        public int Id { get; set; }
         [Required]
         public string FirstName { get; set; }
         [Required]
@@ -49,8 +50,11 @@ namespace wscore.Entities
         public string Email { get; set; }
         [Required]
         public string Group { get; set; }
-
+        [StringLength(200)]
+        public string Description { get; set; }
     }
+
+
 
 
 

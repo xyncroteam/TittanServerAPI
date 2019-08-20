@@ -27,7 +27,8 @@ namespace wscore.Services
         List<Rols> Roles();
         Rols getRolById(Rols statusParam);
         Rols getRolByName(Rols statusParam);
-        void CreateUser(RegisterUserRequest statusParam);
+        void CreateUser(UserRequest statusParam);
+        void UpdateUser(UserRequest statusParam);
     }
 
     public class LoginService : ILoginService
@@ -64,7 +65,7 @@ namespace wscore.Services
                     new Claim(ClaimTypes.Role , user.Group),
                     new Claim(ClaimTypes.Name, user.Username)
                 }),
-                Expires = DateTime.UtcNow.AddMinutes(120),
+                Expires = DateTime.UtcNow.AddMinutes(180),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -385,7 +386,7 @@ namespace wscore.Services
             return _getUserReturn;
         }
 
-        public void CreateUser(RegisterUserRequest statusParam)
+        public void CreateUser(UserRequest statusParam)
         {
             bool userUnique = isUserUnique(statusParam.Username, statusParam.Email);
             if (string.IsNullOrWhiteSpace(statusParam.Password))
@@ -419,13 +420,63 @@ namespace wscore.Services
             }
         }
 
+        public void UpdateUser(UserRequest statusParam)
+        {
+            if (statusParam == null)
+            {
+                throw new AppExceptions("User Id is required");
+            }
+            else
+            {
+                var user = GetUserById(statusParam.Id);
+                var _updateUser = statusParam;
+
+                if (user == null)
+                {
+                    throw new AppExceptions("User not found");
+                }
+                bool userUnique = isUserExist(statusParam.Username, statusParam.Email);
+                Rols groupValue = new Rols();
+                groupValue.RolName = statusParam.Group;
+                var groupExist = getRolByName(groupValue);
+
+                if (_updateUser.Username != user.Username || _updateUser.Email != user.Email)
+                {
+                    if (userUnique)
+                    {
+                        if (groupExist == null)
+                        {
+                            throw new AppExceptions("Group does not exist");
+                        }
+                    }
+                    else
+                    {
+                        throw new AppExceptions("Username or email already exist");
+                    }
+                }
+                Utils.Map(user, statusParam, "Update");
+                user.GroupId = groupExist.Id;
+
+                if (!string.IsNullOrWhiteSpace(statusParam.Password))
+                {
+                    byte[] passwordHashed, passwordKey;
+                    CreateUserPassword_Hash(statusParam.Password, out passwordHashed, out passwordKey);
+
+                    user.Password = BitConverter.ToString(passwordHashed);
+                    user.Key = BitConverter.ToString(passwordKey);
+                }
+                UpdateUserSQL(user);
+            }
+
+        }
+
         private void InsertSQl(User _insertUser, int rolId)
         {
             var _insert = _insertUser;
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO tittan.User (UserName, FirstName, LastName, tittan.User.Password, tittan.User.Key, Email) VALUES ('" + _insert.FirstName.ToString() + "' ,'" + _insert.LastName.ToString() + "','" + _insert.Username.ToString() + "','" + _insert.Password + "','" + _insert.Key + "','" + _insert.Email.ToString() + "'); SELECT LAST_INSERT_ID(); ", conn);
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO tittan.User (FirstName, LastName, UserName, tittan.User.Password, tittan.User.Key, Email) VALUES ('" + _insert.FirstName.ToString() + "' ,'" + _insert.LastName.ToString() + "','" + _insert.Username.ToString() + "','" + _insert.Password + "','" + _insert.Key + "','" + _insert.Email.ToString() + "'); SELECT LAST_INSERT_ID(); ", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -445,12 +496,25 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("insert into tittan.UserGroup (UserId, GroupId) VALUEs(" + userId.ToString() + "," + rolId.ToString() +");", conn);
+                MySqlCommand cmd = new MySqlCommand("insert into tittan.UserGroup (UserId, GroupId) VALUEs(" + userId.ToString() + "," + rolId.ToString() + ");", conn);
                 cmd.ExecuteNonQuery();
             }
         }
-        
 
+        private void UpdateUserSQL(User user)
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+               
+                MySqlCommand cmd = new MySqlCommand("UPDATE User u1, UserGroup g2 " +
+                " SET u1.FirstName = '" + user.FirstName + "' , u1.LastName = '" + user.LastName + "', u1.UserName= '" + user.Username + "' , u1.Password = '" + user.Password + "', u1.Key= '" + user.Key + "', u1.Email= '" + user.Email + "', u1.Description = '" + user.Description + "', g2.GroupId = '" + user.GroupId + "' WHERE u1.UserId = '" + user.Id.ToString() + "' and g2.UserId ='" + user.Id.ToString() + "';", conn);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+
+        //later i need to fix it because the return is not rigth should return or object of all bool
         public bool isUserUnique(string username, string email)
         {
             var isUniqueUsername = GetUserByUsername(username);
@@ -469,6 +533,27 @@ namespace wscore.Services
                 throw new AppExceptions("Email already exist");
             }
             return true;
+
+        }
+
+        public bool isUserExist(string username, string email)
+        {
+            var isUniqueUsername = GetUserByUsername(username);
+            var isUniqueEmail = GetUserByEmail(email);
+
+            if (isUniqueUsername == null && isUniqueEmail == null)
+            {
+                return true;
+            }
+            else if (isUniqueUsername == null)
+            {
+                return true;
+            }
+            else if (isUniqueEmail == null)
+            {
+                return true;
+            }
+            return false;
 
         }
         #region Roles  
