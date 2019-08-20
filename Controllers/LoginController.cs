@@ -88,7 +88,7 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin, User")]
         [HttpPost("register")]
-        public IActionResult Register([FromBody]RegisterUserRequest statusParam)
+        public IActionResult Register([FromBody]UserRequest statusParam)
         {
             try
             {
@@ -108,6 +108,27 @@ namespace wscore.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin, User")]
+        [HttpPost("updateuser")]
+        public IActionResult UpdateUser([FromBody]UserRequest statusParam)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    _loginService.UpdateUser(statusParam);
+                    return Ok("User updated successfully");
+                }
+                else
+                {
+                    return BadRequest("Invalid data, please check the values before.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
         [Authorize(Roles = "Admin,User")]

@@ -9,7 +9,7 @@ namespace newapi.Helpers
 {
     public static class Utils
     {
-        public static void Map(User userModel ,  RegisterUserRequest user, string type)
+        public static void Map(User userModel , UserRequest user, string type)
         {
             if(type == "Create")
             {
@@ -22,7 +22,12 @@ namespace newapi.Helpers
             }
             else
             {
-                Console.WriteLine("Im here");
+                userModel.FirstName = user.FirstName;
+                userModel.LastName = user.LastName;
+                userModel.Username = user.Username;
+                userModel.Email = user.Email;
+                userModel.Group = user.Group;
+                userModel.Description = user.Description;
             }
         }
     }
