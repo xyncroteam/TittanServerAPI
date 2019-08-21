@@ -31,6 +31,18 @@ namespace wscore.Services
         void UpdateUser(UserRequest statusParam);
     }
 
+    public class Unique
+    {
+        public Unique()
+        {
+            usernameUnique = true;
+            emailUnique = true;
+        }
+
+        public bool usernameUnique { get; set; }
+        public bool emailUnique { get; set; }
+    }
+
     public class LoginService : ILoginService
     {
         private readonly AppSettings _appSettings;
@@ -463,23 +475,23 @@ namespace wscore.Services
                 {
                     throw new AppExceptions("User not found");
                 }
-                bool userUnique = isUserExist(statusParam.Username, statusParam.Email);
+                Unique userUnique = isUserExist(statusParam.Username, statusParam.Email);
                 Rols groupValue = new Rols();
                 groupValue.RolName = statusParam.Group;
                 var groupExist = getRolByName(groupValue);
 
                 if (_updateUser.Username != user.Username || _updateUser.Email != user.Email)
                 {
-                    if (userUnique)
+                    if ( !userUnique.usernameUnique || !userUnique.emailUnique)
+                    {
+                        throw new AppExceptions("Username or email already exist");
+                    }
+                    else
                     {
                         if (groupExist == null)
                         {
                             throw new AppExceptions("Group does not exist");
                         }
-                    }
-                    else
-                    {
-                        throw new AppExceptions("Username or email already exist");
                     }
                 }
                 Utils.Map(user, statusParam, "Update");
@@ -565,25 +577,22 @@ namespace wscore.Services
 
         }
 
-        public bool isUserExist(string username, string email)
+        public Unique isUserExist(string username, string email)
         {
+            var unique = new Unique();
             var isUniqueUsername = GetUserByUsername(username);
             var isUniqueEmail = GetUserByEmail(email);
 
-            if (isUniqueUsername == null && isUniqueEmail == null)
+            if (isUniqueUsername != null)
             {
-                return true;
+                unique.usernameUnique = false;
             }
-            else if (isUniqueUsername == null)
+            if (isUniqueEmail != null)
             {
-                return true;
+                unique.emailUnique = false;
             }
-            else if (isUniqueEmail == null)
-            {
-                return true;
-            }
-            return false;
 
+            return unique;
         }
         #region Roles  
 
