@@ -64,6 +64,7 @@ namespace wscore.Entities
     {
         public double AllTotalAmount { get; set; }
         public int totalTerminals { get; set; }
+        public double TotalDeposit { get; set; }
     }
 
 

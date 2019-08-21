@@ -360,11 +360,19 @@ namespace wscore.Controllers
         [HttpPost("allTerminalsTotalAmount")]
         public IActionResult GetAllTerminaslTotalAmount()
         {
-            var _allTotalTerminaslAmountReturn = _actionService.getAllTerminalsTotalAmount(GetUserId());
+            var _allTotalTerminaslAmountReturn = _actionService.getAllTerminalsTotalAmount();
             return Ok(_allTotalTerminaslAmountReturn);
         }
 
-      
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("totalDeposit")]
+        public IActionResult GetAllTotalDeposit()
+        {
+            var _allTotalTerminaslAmountReturn = _actionService.getAllTotalDeposit();
+            return Ok(_allTotalTerminaslAmountReturn);
+        }
+
+
 
     }
 }

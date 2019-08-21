@@ -5,12 +5,14 @@ using Newtonsoft.Json.Linq;
 using SimpleTCP;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using wscore.Entities;
 using wscore.Helpers;
@@ -31,7 +33,8 @@ namespace wscore.Services
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
         void UpdateTerminal(UpdateTerminalReturn updateTerminal);
-        TotalAmount getAllTerminalsTotalAmount(int userId);
+        TotalAmount getAllTerminalsTotalAmount();
+        TotalAmount getAllTotalDeposit();
     }
 
     public class ActionService : IActionService
@@ -46,6 +49,7 @@ namespace wscore.Services
         #region Private
 
         private readonly AppSettings _appSettings;
+        private string calendarDate = "0000";
 
         private MySqlConnection GetConnection()
         {
@@ -1067,7 +1071,7 @@ namespace wscore.Services
             }
         }
 
-        public TotalAmount getAllTerminalsTotalAmount(int userId)
+        public TotalAmount getAllTerminalsTotalAmount()
         {
             TotalAmount totalAmount = new TotalAmount();
 
@@ -1087,5 +1091,44 @@ namespace wscore.Services
             }
             return totalAmount;
         }
+
+        public TotalAmount getAllTotalDeposit()
+        {
+            TotalAmount totalAmount = new TotalAmount();
+
+            //need to changed later for the actual date
+            DateTime startnows1 = DateTime.Now;
+            DateTime enddate1 = DateTime.Now.AddDays(+1);
+            var _start = startnows1.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
+            var _end = enddate1.ToString("yyyy-MM-dd 00:00:00");
+
+
+            DateTime startnows = DateTime.Now.AddDays(-21);
+            DateTime enddate = DateTime.Now.AddDays(-20);
+
+            var _start2 = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
+            var _end2 = enddate.ToString("yyyy-MM-dd 00:00:00");
+
+            //  var startnow = "2019-07-26 00:00:00"; //"8/20/2019 00:00:00"
+            //  var enddate = "2019-01-19 00:00:00";
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                //MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '"+ startnow.AddDays(+1) + "' group by convert(D.DateEnd, date) ", conn);
+                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal from Deposit D where D.DateEnd >= '" + _start2 + "' and  D.DateEnd <= '" + _end2 + "' group by convert(D.DateEnd, date) ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        totalAmount.TotalDeposit = double.Parse(reader["TotalDeposit"].ToString());
+                        totalAmount.totalTerminals = int.Parse(reader["totalterminal"].ToString());
+                    }
+                }
+            }
+            return totalAmount;
+        }
+
+
     }
 }
