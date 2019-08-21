@@ -1109,13 +1109,13 @@ namespace wscore.Services
             var _start2 = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
             var _end2 = enddate.ToString("yyyy-MM-dd 00:00:00");
 
-            //  var startnow = "2019-07-26 00:00:00"; //"8/20/2019 00:00:00"
-            //  var enddate = "2019-01-19 00:00:00";
+            var startnow = "2019-07-30 00:00:00"; //"8/20/2019 00:00:00"
+            var enddate2 = "2019-07-31 00:00:00";
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
                 //MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '"+ startnow.AddDays(+1) + "' group by convert(D.DateEnd, date) ", conn);
-                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal from Deposit D where D.DateEnd >= '" + _start2 + "' and  D.DateEnd <= '" + _end2 + "' group by convert(D.DateEnd, date) ", conn);
+                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '" + enddate2 + "' group by convert(D.DateEnd, date) ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
