@@ -1189,7 +1189,7 @@ namespace wscore.Services
         public List<TerminalsList> getAllTerminalsPercentage()
         {
             List<TerminalsList> percetageTerminals = new List<TerminalsList>();
-            int percentageTerminal = 50; //changes to 75 %
+            int percentageTerminal = 75; //changes to 75 %
 
             using (MySqlConnection conn = GetConnection())
             {
