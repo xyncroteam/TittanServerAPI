@@ -1119,7 +1119,7 @@ namespace wscore.Services
             {
                 conn.Open();
                 //MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '"+ startnow.AddDays(+1) + "' group by convert(D.DateEnd, date) ", conn);
-                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal" +
+                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal " +
                                                     "from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '" + enddate2 + "' group by convert(D.DateEnd, date) ", conn);
 
                 using (var reader = cmd.ExecuteReader())
