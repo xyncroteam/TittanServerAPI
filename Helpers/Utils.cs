@@ -28,6 +28,7 @@ namespace newapi.Helpers
                 userModel.Email = user.Email;
                 userModel.Group = user.Group;
                 userModel.Description = user.Description;
+               // userModel.Code = user.Code;
             }
         }
     }

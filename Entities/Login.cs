@@ -14,4 +14,9 @@ namespace wscore.Entities
         public int Id { get; set;  }
         public string RolName { get; set; } 
     }
+
+    public class Code
+    {
+        public int code { get; set; }
+    }
 }

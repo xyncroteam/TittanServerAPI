@@ -114,6 +114,10 @@ namespace wscore.Controllers
         {
             try
             {
+                if (statusParam == null)
+                {
+                    throw new AppExceptions("Invalid data");
+                }
                 if (string.IsNullOrEmpty(statusParam.Password))
                 {
                     ModelState.Remove("Password");
