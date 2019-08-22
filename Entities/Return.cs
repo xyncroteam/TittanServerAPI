@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace wscore.Entities
@@ -19,7 +20,7 @@ namespace wscore.Entities
         public string Door { get; set; }
         public string CashBoxDoor { get; set; }
         public string Reader { get; set; }
-        
+
     }
 
     public class DepositReturn
@@ -32,7 +33,7 @@ namespace wscore.Entities
         public string[] BillsDetail { get; set; }
         public string Date { get; set; }
         public string Status { get; set; }
-        
+
     }
 
     public class TerminalReturn
@@ -52,11 +53,11 @@ namespace wscore.Entities
 
     public class UpdateTerminalReturn
     {
-       // [Required]
+        // [Required]
         public int TerminalId { get; set; }
         public string Description { get; set; }
         public string Address { get; set; }
-       // [Required]
+        // [Required]
         public string Name { get; set; }
     }
 
@@ -67,5 +68,21 @@ namespace wscore.Entities
         public double TotalDeposit { get; set; }
     }
 
+    public class TerminalsList
+    {
+        public string Name { get; set; }
+        public string Address { get; set; }
+        public DateTime LastComunication { get; set; }
+        public double percentageTerminal { get; set; }
+    }
+
+    public class TerminalsCapacity
+    {
+        public int TotalSystemCapacityNotes { get; set; }
+        public int currentNotes { get; set; }
+        public double percentageNotes { get; set; }
+    }
+
+    
 
 }

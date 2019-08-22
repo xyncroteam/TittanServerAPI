@@ -355,6 +355,7 @@ namespace wscore.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        #region DashBoard functions
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("allTerminalsTotalAmount")]
@@ -372,7 +373,30 @@ namespace wscore.Controllers
             return Ok(_allTotalTerminaslAmountReturn);
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("offlineterminals")]
+        public IActionResult GetAllOfflineTerminals()
+        {
+            var _allOfflineTerminals = _actionService.getAllOfflineTerminals();
+            return Ok(_allOfflineTerminals);
+        }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminalscapacity")]
+        public IActionResult GetTerminalsCapacity()
+        {
+            var _terminalsCapacity = _actionService.getTerminalsCapacity();
+            return Ok(_terminalsCapacity);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminalspercentage")]
+        public IActionResult GetAllTerminalsPercentage()
+        {
+            var _terminalsCapacity = _actionService.getAllTerminalsPercentage();
+            return Ok(_terminalsCapacity);
+        }
+        #endregion
 
     }
 }

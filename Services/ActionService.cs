@@ -35,6 +35,9 @@ namespace wscore.Services
         void UpdateTerminal(UpdateTerminalReturn updateTerminal);
         TotalAmount getAllTerminalsTotalAmount();
         TotalAmount getAllTotalDeposit();
+        List<TerminalsList> getAllOfflineTerminals();
+        TerminalsCapacity getTerminalsCapacity();
+        List<TerminalsList> getAllTerminalsPercentage();
     }
 
     public class ActionService : IActionService
@@ -1066,7 +1069,8 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
+                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' " +
+                                                    " WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -1115,7 +1119,8 @@ namespace wscore.Services
             {
                 conn.Open();
                 //MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '"+ startnow.AddDays(+1) + "' group by convert(D.DateEnd, date) ", conn);
-                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '" + enddate2 + "' group by convert(D.DateEnd, date) ", conn);
+                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal" +
+                                                    "from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '" + enddate2 + "' group by convert(D.DateEnd, date) ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -1128,6 +1133,88 @@ namespace wscore.Services
             }
             return totalAmount;
         }
+
+        public List<TerminalsList> getAllOfflineTerminals()
+        {
+            List<TerminalsList> offlineTerminals = new List<TerminalsList>();
+
+            DateTime startnows1 = DateTime.Now;
+            var _date = startnows1.ToString("yyyy-MM-dd HH':'mm':'ss");
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select Name, Address, LastComunication from Terminal where LastComunication <= date_sub('" + _date + "' , Interval 30 minute) ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TerminalsList _offline = new TerminalsList();
+                        _offline.Name = reader["Name"].ToString();
+                        _offline.Address = reader["Address"].ToString();
+                        _offline.LastComunication = DateTime.Parse(reader["LastComunication"].ToString());
+
+                        offlineTerminals.Add(_offline);
+                    }
+                }
+            }
+            return offlineTerminals;
+        }
+
+        public TerminalsCapacity getTerminalsCapacity()
+        {
+            TerminalsCapacity terminalsCapacity = new TerminalsCapacity();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select totalSystemCapacity, currentNotes, ((currentNotes * 100) / totalSystemCapacity) as percentage " +
+                                                    "from(select sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes," +
+                                                    "(select sum(NotesCapacity) from Terminal) as totalSystemCapacity from TerminalNotes) as total", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        terminalsCapacity.TotalSystemCapacityNotes = int.Parse(reader["totalSystemCapacity"].ToString());
+                        terminalsCapacity.currentNotes = int.Parse(reader["currentNotes"].ToString());
+                        terminalsCapacity.percentageNotes = double.Parse(reader["percentage"].ToString());
+                    }
+                }
+            }
+            return terminalsCapacity;
+        }
+
+        public List<TerminalsList> getAllTerminalsPercentage()
+        {
+            List<TerminalsList> percetageTerminals = new List<TerminalsList>();
+            int percentageTerminal = 75;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select Name, Address, percentageTerminal from (select Name, Address, ((currentNotes * 100) / totalCashBox) as percentageTerminal " +
+                                                    "from(select T.Name, T.Address, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes," +
+                                                    "sum(CashBoxCapacity) as totalCashBox from TerminalNotes N inner join Terminal T on T.TerminalId = N.TerminalId group by N.TerminalId) as total) as grandtotal" +
+                                                    " where percentageTerminal > '" + percentageTerminal + "'", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TerminalsList percentage = new TerminalsList();
+                        percentage.Name = reader["Name"].ToString();
+                        percentage.Address = reader["Address"].ToString();
+                        percentage.percentageTerminal = double.Parse(reader["percentageTerminal"].ToString());
+
+                        percetageTerminals.Add(percentage);
+                    }
+                }
+            }
+            return percetageTerminals;
+        }
+
 
 
     }
