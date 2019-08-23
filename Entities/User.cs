@@ -16,7 +16,7 @@ namespace wscore.Entities
         public string Group { get; set; }
         public string Description { get; set; }
         public int GroupId { get; set; }    //used to updating groupId
-        public int Code { get; set; }       //used for access code through the terminal boot
+        public int accessCode { get; set; }       //used for access code through the terminal boot
     }
 
     public class UserReturn
@@ -28,7 +28,7 @@ namespace wscore.Entities
         public string Email { get; set; }
         public string Group { get; set; }
         public string Description { get; set; }
-        public int Code { get; set; }
+        public int accessCode { get; set; }
     }
 
     public class UserRequest

@@ -175,7 +175,7 @@ namespace wscore.Services
                         user.Email = reader["Email"].ToString();
                         user.Group = reader["Name"].ToString();
                         user.Description = reader["Description"].ToString();
-                        user.Code = int.Parse(reader["Code"].ToString());
+                        user.accessCode = int.Parse(reader["Code"].ToString());
                     }
                 }
             }
@@ -204,7 +204,7 @@ namespace wscore.Services
                         user.Group = reader["Name"].ToString();
                         user.Password = reader["Password"].ToString();
                         user.Key = reader["Key"].ToString();
-                        user.Code = int.Parse(reader["Code"].ToString());
+                        user.accessCode = int.Parse(reader["Code"].ToString());
                     }
                 }
             }
@@ -420,7 +420,7 @@ namespace wscore.Services
                 _getUserReturn.Email = _user.Email;
                 _getUserReturn.Description = _user.Description;
                 _getUserReturn.Group = _user.Group;
-                _getUserReturn.Code = _user.Code;
+                _getUserReturn.accessCode = _user.accessCode;
             }
             else
             {
@@ -457,7 +457,7 @@ namespace wscore.Services
                     {
                         throw new AppExceptions("Code already exist");
                     }
-                    user.Code = int.Parse(code);
+                    user.accessCode = int.Parse(code);
                     InsertSQl(user, groupExist.Id);
                 }
                 else
@@ -554,7 +554,7 @@ namespace wscore.Services
                 }
                 Utils.Map(user, statusParam, "Update");
                 string requestCode = _updateUser.Code.ToString();
-                if (user.Code != _updateUser.Code)
+                if (user.accessCode != _updateUser.Code)
                 {
                     if (requestCode.Distinct().Count() == 1)
                     {
@@ -565,7 +565,7 @@ namespace wscore.Services
                     {
                         throw new AppExceptions("Code already exist");
                     }
-                    user.Code = int.Parse(requestCode);
+                    user.accessCode = int.Parse(requestCode);
                 }
                 user.GroupId = groupExist.Id;
 
@@ -589,7 +589,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO tittan.User (FirstName, LastName, UserName, tittan.User.Password, tittan.User.Key, Email, Code) VALUES ('" + _insert.FirstName.ToString() + "' ,'" + _insert.LastName.ToString() + "','" + _insert.Username.ToString() + "','" + _insert.Password + "','" + _insert.Key + "','" + _insert.Email.ToString() + "','" + _insert.Code + "'); SELECT LAST_INSERT_ID(); ", conn);
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO tittan.User (FirstName, LastName, UserName, tittan.User.Password, tittan.User.Key, Email, Code) VALUES ('" + _insert.FirstName.ToString() + "' ,'" + _insert.LastName.ToString() + "','" + _insert.Username.ToString() + "','" + _insert.Password + "','" + _insert.Key + "','" + _insert.Email.ToString() + "','" + _insert.accessCode + "'); SELECT LAST_INSERT_ID(); ", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -621,7 +621,7 @@ namespace wscore.Services
                 conn.Open();
 
                 MySqlCommand cmd = new MySqlCommand("UPDATE User u1, UserGroup g2 " +
-                " SET u1.FirstName = '" + user.FirstName + "' , u1.LastName = '" + user.LastName + "', u1.UserName= '" + user.Username + "' , u1.Password = '" + user.Password + "', u1.Key= '" + user.Key + "', u1.Email= '" + user.Email + "', u1.Description = '" + user.Description + "', g2.GroupId = '" + user.GroupId + "' , u1.Code = '" + user.Code + "' WHERE u1.UserId = '" + user.Id.ToString() + "' and g2.UserId ='" + user.Id.ToString() + "';", conn);
+                " SET u1.FirstName = '" + user.FirstName + "' , u1.LastName = '" + user.LastName + "', u1.UserName= '" + user.Username + "' , u1.Password = '" + user.Password + "', u1.Key= '" + user.Key + "', u1.Email= '" + user.Email + "', u1.Description = '" + user.Description + "', g2.GroupId = '" + user.GroupId + "' , u1.Code = '" + user.accessCode + "' WHERE u1.UserId = '" + user.Id.ToString() + "' and g2.UserId ='" + user.Id.ToString() + "';", conn);
                 cmd.ExecuteNonQuery();
             }
         }
