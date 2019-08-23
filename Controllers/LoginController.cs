@@ -92,6 +92,11 @@ namespace wscore.Controllers
         {
             try
             {
+                if (statusParam.accessCode == 0 )
+                {
+                    ModelState.Remove("accessCode");
+                }
+
                 if (ModelState.IsValid)
                 {
                     _loginService.CreateUser(statusParam);

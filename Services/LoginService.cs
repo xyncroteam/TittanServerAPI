@@ -553,8 +553,8 @@ namespace wscore.Services
                     }
                 }
                 Utils.Map(user, statusParam, "Update");
-                string requestCode = _updateUser.Code.ToString();
-                if (user.accessCode != _updateUser.Code)
+                string requestCode = _updateUser.accessCode.ToString();
+                if (user.accessCode != _updateUser.accessCode)
                 {
                     if (requestCode.Distinct().Count() == 1)
                     {

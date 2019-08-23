@@ -56,7 +56,7 @@ namespace wscore.Entities
         public string Description { get; set; }
         [Range(100000, 999999)]
        // [StringLength(6, MinimumLength = 6)]
-        public int Code { get; set; }
+        public int accessCode { get; set; }
 
     }
 }
