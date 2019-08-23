@@ -133,7 +133,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("SELECT tittan.User.UserId, tittan.User.UserName , tittan.User.FirstName, tittan.User.lastname, tittan.Group.Name, tittan.User.Email FROM tittan.User inner JOIN tittan.UserGroup ON tittan.UserGroup.UserId = tittan.User.UserId inner join tittan.Group on tittan.Group.GroupId = tittan.UserGroup.GroupId ", conn);
+                MySqlCommand cmd = new MySqlCommand("SELECT tittan.User.UserId, tittan.User.UserName , tittan.User.FirstName, tittan.User.lastname, tittan.Group.Name, tittan.User.Email, tittan.User.Code FROM tittan.User inner JOIN tittan.UserGroup ON tittan.UserGroup.UserId = tittan.User.UserId inner join tittan.Group on tittan.Group.GroupId = tittan.UserGroup.GroupId ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -146,6 +146,7 @@ namespace wscore.Services
                         _user.LastName = reader["LastName"].ToString();
                         _user.Email = reader["Email"].ToString();
                         _user.Group = reader["Name"].ToString();
+                        _user.accessCode = Int32.Parse(reader["Code"].ToString());
 
                         _listUsers.Add(_user);
                     }
@@ -395,6 +396,7 @@ namespace wscore.Services
                     ur.LastName = user.LastName;
                     ur.Email = user.Email;
                     ur.Group = user.Group.ToString();
+                    ur.accessCode = user.accessCode;
 
                     __userListReturn.Add(ur);
                 }
