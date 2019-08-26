@@ -83,6 +83,17 @@ namespace wscore.Entities
         public double percentageNotes { get; set; }
     }
 
-    
+    public class DepositListReturn
+    {
+        public string TerminalName { get; set; }
+        public string TerminalAddress { get; set; }
+        public int DepositId { get; set; }
+        public int DepositNumber { get; set; }
+        public int Amount { get; set; }
+        public DateTime Date { get; set; }
+        public Notes DepositNotes { get; set; }
+        public string UserNameDeposit { get; set; }
+    }
+
 
 }

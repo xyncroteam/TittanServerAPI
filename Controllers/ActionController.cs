@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using newapi.Helpers;
 using wscore.Entities;
 using wscore.Helpers;
 using wscore.Services;
@@ -25,7 +26,7 @@ namespace wscore.Controllers
 
         protected string GetUserName()
         {
-            return this.User.Claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).SingleOrDefault(); 
+            return this.User.Claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).SingleOrDefault();
         }
 
         public ActionController(IActionService actionService)
@@ -355,6 +356,44 @@ namespace wscore.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("deposits")]
+        public IActionResult GetDetposits([FromBody]DepositRequest depositParam)
+        {
+            try
+            {
+                if (depositParam == null)
+                {
+                    throw new AppExceptions("Date invalid ");
+                }
+                var _statusReturn = _actionService.getDeposits(depositParam);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("depositNotes")]
+        public IActionResult GetDepositNotes([FromBody]DepositNotesRequest depositParam)
+        {
+            try
+            {
+                var _depositReturn = _actionService.DepositNotes(depositParam.DepositId);
+                return Ok(_depositReturn);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
         #region DashBoard functions
 
         [Authorize(Roles = "Admin,User")]

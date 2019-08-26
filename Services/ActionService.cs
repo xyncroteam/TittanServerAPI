@@ -38,6 +38,8 @@ namespace wscore.Services
         List<TerminalsList> getAllOfflineTerminals();
         TerminalsCapacity getTerminalsCapacity();
         List<TerminalsList> getAllTerminalsPercentage();
+        List<DepositListReturn> getDeposits(DepositRequest depositParam);
+        Notes DepositNotes(int? depositId);
     }
 
     public class ActionService : IActionService
@@ -160,6 +162,36 @@ namespace wscore.Services
             }
         }
 
+        private Notes GetDepositNotes(int depositId)
+        {
+            Notes _notes = null; ;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select * from DepositNotes where DepositId=" + depositId.ToString(), conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _notes = new Notes();
+                        _notes.Note1 = int.Parse(reader["Notes1"].ToString());
+                        _notes.Note2 = int.Parse(reader["Notes2"].ToString());
+                        _notes.Note5 = int.Parse(reader["Notes5"].ToString());
+                        _notes.Note10 = int.Parse(reader["Notes10"].ToString());
+                        _notes.Note20 = int.Parse(reader["Notes20"].ToString());
+                        _notes.Note50 = int.Parse(reader["Notes50"].ToString());
+                        _notes.Note100 = int.Parse(reader["Notes100"].ToString());
+                        _notes.Note200 = int.Parse(reader["Notes200"].ToString());
+                        _notes.Note500 = int.Parse(reader["Notes500"].ToString());
+                        _notes.Note1000 = int.Parse(reader["Notes1000"].ToString());
+                    }
+                }
+            }
+            return _notes;
+        }
+
         private Notes GetTerminalNotes(int terminalId)
         {
             Notes _notes = null; ;
@@ -174,12 +206,16 @@ namespace wscore.Services
                     while (reader.Read())
                     {
                         _notes = new Notes();
-                        _notes.Note1 = int.Parse(reader["1"].ToString());
-                        _notes.Note5 = int.Parse(reader["5"].ToString());
-                        _notes.Note10 = int.Parse(reader["10"].ToString());
-                        _notes.Note20 = int.Parse(reader["20"].ToString());
-                        _notes.Note50 = int.Parse(reader["50"].ToString());
-                        _notes.Note100 = int.Parse(reader["100"].ToString());
+                        _notes.Note1 = int.Parse(reader["Notes1"].ToString());
+                        _notes.Note2 = int.Parse(reader["Notes2"].ToString());
+                        _notes.Note5 = int.Parse(reader["Notes5"].ToString());
+                        _notes.Note10 = int.Parse(reader["Notes10"].ToString());
+                        _notes.Note20 = int.Parse(reader["Notes20"].ToString());
+                        _notes.Note50 = int.Parse(reader["Notes50"].ToString());
+                        _notes.Note100 = int.Parse(reader["Notes100"].ToString());
+                        _notes.Note200 = int.Parse(reader["Notes200"].ToString());
+                        _notes.Note500 = int.Parse(reader["Notes500"].ToString());
+                        _notes.Note1000 = int.Parse(reader["Notes1000"].ToString());
                     }
                 }
             }
@@ -880,10 +916,7 @@ namespace wscore.Services
 
                     _listReturn.Add(r);
                 }
-
-            }
-
-
+            }            
             return _listReturn;
         }
 
@@ -1215,7 +1248,74 @@ namespace wscore.Services
             return percetageTerminals;
         }
 
+        public List<DepositListReturn> getDeposits(DepositRequest depositParam)
+        {
+            var _deposits = ListDeposits(depositParam);
+
+            return _deposits;
+        }
+
+        private List<DepositListReturn> ListDeposits(DepositRequest depositParam)
+        {
+            if (string.IsNullOrWhiteSpace(depositParam.StartDate.ToString()) || string.IsNullOrWhiteSpace(depositParam.EndDate.ToString()))
+            {
+                throw new AppExceptions("Date can not be empty");
+            }
+            string startDate = depositParam.StartDate.Value.ToString("yyyy-MM-dd 00:00:00");
+
+            DateTime _endDate = DateTime.Parse(depositParam.EndDate.ToString());
+            _endDate = _endDate.AddDays(+1);
+            string endDate = _endDate.ToString("yyyy-MM-dd 00:00:00");
 
 
+            List<DepositListReturn> _listDeposit = new List<DepositListReturn>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "select t.Name, t.Address, Amount, DepositNumber, DepositId, DateEnd, u.FirstName , u.LastName from Deposit d inner join Terminal t " +
+                    "on d.TerminalId = t.TerminalId inner join User u on d.UserId = u.UserId where d.DateEnd >= '" + startDate + "' and  d.DateEnd <= '" + endDate + "' ";
+
+                if (depositParam.TerminalId != null)
+                {
+                    sql += " and d.TerminalId = " + depositParam.TerminalId + " ";
+                }
+                
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        DepositListReturn _deposits = new DepositListReturn();
+                        _deposits.TerminalName = reader["Name"].ToString();
+                        _deposits.TerminalAddress = reader["Address"].ToString();
+                        _deposits.Amount = int.Parse(reader["Amount"].ToString());
+                        _deposits.DepositId = int.Parse(reader["DepositId"].ToString());
+                        _deposits.DepositNumber = int.Parse(reader["DepositNumber"].ToString());
+                        _deposits.Date = DateTime.Parse(reader["DateEnd"].ToString());
+                        _deposits.UserNameDeposit = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _listDeposit.Add(_deposits);
+                    }
+                }
+            }
+            return _listDeposit;        
+        }
+
+        public Notes DepositNotes(int? depositId)
+        {
+            Notes _depositnotes = null;
+            if (depositId != null)
+            {
+                _depositnotes = GetDepositNotes(depositId.Value);
+            }
+            else
+            {
+                throw new AppExceptions("Deposit Note not found");
+            }
+            return _depositnotes;
+        }  
     }
 }
