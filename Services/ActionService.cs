@@ -40,6 +40,7 @@ namespace wscore.Services
         List<TerminalsList> getAllTerminalsPercentage();
         List<DepositListReturn> getDeposits(DepositRequest depositParam);
         Notes DepositNotes(int? depositId);
+        List<TerminalIdsReturn> GetTerminalsIds();
     }
 
     public class ActionService : IActionService
@@ -916,7 +917,7 @@ namespace wscore.Services
 
                     _listReturn.Add(r);
                 }
-            }            
+            }
             return _listReturn;
         }
 
@@ -1282,7 +1283,7 @@ namespace wscore.Services
                 {
                     sql += " and d.TerminalId = " + depositParam.TerminalId + " ";
                 }
-                
+
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
 
                 using (var reader = cmd.ExecuteReader())
@@ -1301,7 +1302,7 @@ namespace wscore.Services
                     }
                 }
             }
-            return _listDeposit;        
+            return _listDeposit;
         }
 
         public Notes DepositNotes(int? depositId)
@@ -1316,6 +1317,30 @@ namespace wscore.Services
                 throw new AppExceptions("Deposit Note not found");
             }
             return _depositnotes;
-        }  
+        }
+
+        //function for the dropdowns for the reports, deposits and withdraw
+        public List<TerminalIdsReturn> GetTerminalsIds()
+        {
+            List<TerminalIdsReturn> _listTerminalIds = new List<TerminalIdsReturn>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select TerminalId, Name from Terminal ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TerminalIdsReturn _terminal = new TerminalIdsReturn();
+                        _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                        _terminal.Name = reader["Name"].ToString();
+                        _listTerminalIds.Add(_terminal);
+                    }
+                }
+            }
+            return _listTerminalIds;
+        }
     }
 }

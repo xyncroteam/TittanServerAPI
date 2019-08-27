@@ -393,6 +393,14 @@ namespace wscore.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("getTerminalsIds")]
+        public IActionResult GetAllTerminalsIds()
+        {
+            var _statusReturn = _actionService.GetTerminalsIds(); 
+            return Ok(_statusReturn);
+        }
+
 
         #region DashBoard functions
 

@@ -50,6 +50,11 @@ namespace wscore.Entities
         public int TotalAmount { get; set; }
         public Notes Notes { get; set; }
     }
+    public class TerminalIdsReturn
+    {
+        public int TerminalId { get; set; }
+        public string Name { get; set; }
+    }
 
     public class UpdateTerminalReturn
     {
