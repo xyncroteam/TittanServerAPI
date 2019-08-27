@@ -60,6 +60,18 @@ namespace wscore.Controllers
             return Ok();
         }
 
+        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        [AllowAnonymous]
+        [HttpPost("depositfromterminal")]
+        public IActionResult DepositFromTerminal([FromBody]DepositFromTerminal deposit)
+        {
+            bool ok = _terminalService.DepositFromTerminal(deposit);
+            if(ok)
+                return Ok("ok");
+            else
+                return Ok("error");
+        }
+
     }
     
 }

@@ -18,6 +18,7 @@ namespace wscore.Services
     {
         void DepositTerminal(string deposit);
         void EventTerminal(int terminalId, int eventId);
+        bool DepositFromTerminal(DepositFromTerminal deposit);
     }
 
     public class TerminalService : ITerminalService
@@ -257,10 +258,70 @@ namespace wscore.Services
             }
         }
 
+        private DepositFromTerminal DepositInsert(DepositFromTerminal deposit)
+        {
+            var _deposit = deposit;
+
+            _deposit.Amount = Decimal.ToInt32(Convert.ToDecimal(_deposit.Amount)).ToString();
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ", NOW()," + _deposit.TerminalId + "," + _deposit.UserId + ");SELECT LAST_INSERT_ID();", conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _deposit.DepositId = Convert.ToInt32(reader[0]);
+                    }
+                }
+            }
+
+            return _deposit;
+        }
+
+        private void DepositNotesInsert(DepositFromTerminal deposit)
+        {
+
+            string strCol = "";
+            string strVal = "";
+            foreach (var n in deposit.Notes)
+            {
+                strCol += ",Notes" + n.NoteId;
+                strVal += "," + n.Count;
+            }
+            
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("insert into DepositNotes (DepositId " + strCol + ") values (" + deposit.DepositId + " " + strVal + ") ;", conn);
+                cmd.ExecuteNonQuery();
+            }
+            
+            //return _deposit;
+        }
+
         #endregion
 
         #endregion
-        
+
+        public bool DepositFromTerminal(DepositFromTerminal deposit)
+        {
+            bool ok = true;
+
+            try
+            {
+                deposit = DepositInsert(deposit);
+                DepositNotesInsert(deposit);
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            return ok;
+        }
+
+
         public void DepositTerminal(string deposit)
         {
             string[] _depo = deposit.Split(';');

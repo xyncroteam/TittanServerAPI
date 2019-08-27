@@ -256,9 +256,10 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("opendoortcp")]
-        public IActionResult OpenDoorTCP([FromBody]Event eventParam)
+        public IActionResult OpenDoorTCP([FromBody]EventTCP eventParam)
         {
-            var _eventReturn = _actionService.OpenDoorTCP(eventParam.TerminalId, GetUserId());
+            eventParam.UserId = GetUserId();
+            var _eventReturn = _actionService.OpenDoorTCP(eventParam);
             _eventReturn.Date = DateTime.Now.ToString();
             _eventReturn.UserName = GetUserName();
 

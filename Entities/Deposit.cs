@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Generic;
+
 namespace wscore.Entities
 {
     public class Deposit
@@ -13,6 +15,19 @@ namespace wscore.Entities
         public DepositStatus Status { get; set; }
         public string UserName { get; set; }
         public int UserId { get; set; }
+        public List<Note> Notes { get; set; }
+    }
+
+    public class DepositFromTerminal
+    {
+        public int DepositId { get; set; }
+        public string UserId { get; set; }
+        public string TerminalId { get; set; }
+        public string DepositNumber { get; set; }
+        public string Amount { get; set; }
+        public List<Note> Notes { get; set; }
+        public string Date { get; set; }
+      
     }
 
     public enum DepositStatus
@@ -24,6 +39,12 @@ namespace wscore.Entities
         OffLine,
         Busy,
         Error
+    }
+
+    public class Note
+    {
+        public string NoteId { get; set; }
+        public string Count { get; set; }
     }
 
 

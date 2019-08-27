@@ -11,6 +11,14 @@
         public string Date { get; set; }
     }
 
+    public class EventTCP
+    {
+        public int TerminalId { get; set; }
+        public string Event { get; set; }
+        public int UserId { get; set; }
+        public int Code { get; set; }
+    }
+
     public enum EventStatus
     {
         Successful,

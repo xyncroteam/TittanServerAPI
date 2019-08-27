@@ -22,7 +22,7 @@ namespace wscore.Services
         DepositReturn Deposit(int terminalId, string number, int total, int userId);
         DepositReturn DepositTCP(int terminalId, int userId);
         ActionReturn OpenDoor(int terminalId, int userId);
-        ActionReturn OpenDoorTCP(int terminalId, int userId);
+        ActionReturn OpenDoorTCP(EventTCP action);
         ActionReturn Reboot(int terminalId, int userId);
         ActionReturn RebootTCP(int terminalId, int userId);
         TerminalReturn Status(int terminalId, int userId);
@@ -519,20 +519,24 @@ namespace wscore.Services
             return _eventReturn;
         }
 
-        public ActionReturn OpenDoorTCP(int terminalId, int userId)
+        public ActionReturn OpenDoorTCP(EventTCP action)
         {
-            var _terminal = GetTerminal(terminalId);
+            var _terminal = GetTerminal(action.TerminalId);
 
-            var _event = new Event();
+            var _eventReturn = new ActionReturn();
+            _eventReturn.TerminalId = action.TerminalId;//_event.TerminalId;
+            _eventReturn.EventType = EventType.OpenDoor.ToString();//_event.EventType.ToString();
 
-            _event.TerminalId = terminalId;
+            //var _event = new Event();
+
+            //_event.TerminalId = terminalId;
 
             if (_terminal != null)
             {
-                _event.EventTypeId = 3;
-                _event.EventType = EventType.OpenDoor;
-                _event.UserId = userId;
-                _event = EventInsert(_event);
+                //_event.EventTypeId = 3;
+                //_event.EventType = EventType.OpenDoor;
+                //_event.UserId = userId;
+                //_event = EventInsert(_event);
 
                 
                 if (IsOnline(_terminal.IP))
@@ -540,35 +544,37 @@ namespace wscore.Services
                     try
                     {
 
+                        action.Event = EventType.OpenDoor.ToString();
+
+                        string strParam = Newtonsoft.Json.JsonConvert.SerializeObject(action);// DeserializeObject<Deposit>(jsonDepo);
+
                         SimpleTcpClient clienttcp;
                         clienttcp = new SimpleTcpClient();
                         clienttcp.StringEncoder = Encoding.UTF8;
                         clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
-                        clienttcp.WriteLineAndGetReply("opendoor", TimeSpan.FromSeconds(1));
+                        clienttcp.WriteLineAndGetReply(strParam, TimeSpan.FromSeconds(1));
 
-                        _event.Status = EventStatus.Successful;
-                        _event = EventUpdate(_event);
+                        _eventReturn.Status = EventStatus.Successful.ToString();
+                        //_event = EventUpdate(_event);
                     }
                     catch
                     {
-                        _event.Status = EventStatus.Busy;
-                        _event = EventUpdate(_event);
+                        _eventReturn.Status = EventStatus.Busy.ToString(); ;
+                        //_event = EventUpdate(_event);
                     }
                 }
                 else
                 {
-                    _event.Status = EventStatus.OffLine;
-                    _event = EventUpdate(_event);
+                    _eventReturn.Status = EventStatus.OffLine.ToString(); ;
+                    //_event = EventUpdate(_event);
                 }
             }
             else
             {
-                _event.Status = EventStatus.Error;
+                _eventReturn.Status = EventStatus.Error.ToString();
             }
-            var _eventReturn = new ActionReturn();
-            _eventReturn.TerminalId = _event.TerminalId;
-            _eventReturn.EventType = _event.EventType.ToString();
-            _eventReturn.Status = _event.Status.ToString();
+
+            //_eventReturn.Status = _event.Status.ToString();
 
             return _eventReturn;
         }
@@ -756,7 +762,7 @@ namespace wscore.Services
                         clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
 
                         _deposit.Status = DepositStatus.Sending;
-                        _deposit = DepositInsert(_deposit);
+                        //_deposit = DepositInsert(_deposit);
 
                         _event.Status = EventStatus.Successful;
                         _event = EventUpdate(_event);
@@ -767,11 +773,11 @@ namespace wscore.Services
                         {
                             if (resp.MessageString.Contains("processing")){
                                 _deposit.Status = DepositStatus.Processing;
-                                _deposit = DepositUpdate(_deposit);
+                                //_deposit = DepositUpdate(_deposit);
                             }
                             else {
                                 _deposit.Status = DepositStatus.Error;
-                                _deposit = DepositUpdate(_deposit);
+                                //_deposit = DepositUpdate(_deposit);
                             }
                         }
                     }
@@ -786,7 +792,7 @@ namespace wscore.Services
                     _event.Status = EventStatus.OffLine;
                     _event = EventUpdate(_event);
                     _deposit.Status = DepositStatus.OffLine;
-                    _deposit = DepositUpdate(_deposit);
+                    //_deposit = DepositUpdate(_deposit);
                 }
 
             }
