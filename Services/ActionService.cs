@@ -5,12 +5,14 @@ using Newtonsoft.Json.Linq;
 using SimpleTCP;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using wscore.Entities;
 using wscore.Helpers;
@@ -31,21 +33,29 @@ namespace wscore.Services
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
         void UpdateTerminal(UpdateTerminalReturn updateTerminal);
-        TotalAmount getAllTerminalsTotalAmount(int userId);
+        TotalAmount getAllTerminalsTotalAmount();
+        TotalAmount getAllTotalDeposit();
+        List<TerminalsList> getAllOfflineTerminals();
+        TerminalsCapacity getTerminalsCapacity();
+        List<TerminalsList> getAllTerminalsPercentage();
+        List<DepositListReturn> getDeposits(DepositRequest depositParam);
+        Notes DepositNotes(int? depositId);
+        List<TerminalIdsReturn> GetTerminalsIds();
     }
 
     public class ActionService : IActionService
     {
-        
+
         public ActionService(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
-            
+
         }
 
         #region Private
 
         private readonly AppSettings _appSettings;
+        private string calendarDate = "0000";
 
         private MySqlConnection GetConnection()
         {
@@ -110,6 +120,8 @@ namespace wscore.Services
                         _terminal.Notes = int.Parse(reader["Notes"].ToString());
                         _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
                         _terminal.TotalAmount = int.Parse(reader["TotalAmount"].ToString());
+                        _terminal.ContactName = reader["ContactName"].ToString();
+                        _terminal.ContactPhone = reader["ContactPhone"].ToString();
                     }
                 }
             }
@@ -124,7 +136,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select * from Terminal where Name= '" + name.ToString() + "' " , conn);
+                MySqlCommand cmd = new MySqlCommand("select * from Terminal where Name= '" + name.ToString() + "' ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -153,6 +165,36 @@ namespace wscore.Services
             }
         }
 
+        private Notes GetDepositNotes(int depositId)
+        {
+            Notes _notes = null; ;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select * from DepositNotes where DepositId=" + depositId.ToString(), conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _notes = new Notes();
+                        _notes.Note1 = int.Parse(reader["Notes1"].ToString());
+                        _notes.Note2 = int.Parse(reader["Notes2"].ToString());
+                        _notes.Note5 = int.Parse(reader["Notes5"].ToString());
+                        _notes.Note10 = int.Parse(reader["Notes10"].ToString());
+                        _notes.Note20 = int.Parse(reader["Notes20"].ToString());
+                        _notes.Note50 = int.Parse(reader["Notes50"].ToString());
+                        _notes.Note100 = int.Parse(reader["Notes100"].ToString());
+                        _notes.Note200 = int.Parse(reader["Notes200"].ToString());
+                        _notes.Note500 = int.Parse(reader["Notes500"].ToString());
+                        _notes.Note1000 = int.Parse(reader["Notes1000"].ToString());
+                    }
+                }
+            }
+            return _notes;
+        }
+
         private Notes GetTerminalNotes(int terminalId)
         {
             Notes _notes = null; ;
@@ -167,12 +209,16 @@ namespace wscore.Services
                     while (reader.Read())
                     {
                         _notes = new Notes();
-                        _notes.Note1= int.Parse(reader["1"].ToString());
-                        _notes.Note5 = int.Parse(reader["5"].ToString());
-                        _notes.Note10 = int.Parse(reader["10"].ToString());
-                        _notes.Note20 = int.Parse(reader["20"].ToString());
-                        _notes.Note50 = int.Parse(reader["50"].ToString());
-                        _notes.Note100 = int.Parse(reader["100"].ToString());
+                        _notes.Note1 = int.Parse(reader["Notes1"].ToString());
+                        _notes.Note2 = int.Parse(reader["Notes2"].ToString());
+                        _notes.Note5 = int.Parse(reader["Notes5"].ToString());
+                        _notes.Note10 = int.Parse(reader["Notes10"].ToString());
+                        _notes.Note20 = int.Parse(reader["Notes20"].ToString());
+                        _notes.Note50 = int.Parse(reader["Notes50"].ToString());
+                        _notes.Note100 = int.Parse(reader["Notes100"].ToString());
+                        _notes.Note200 = int.Parse(reader["Notes200"].ToString());
+                        _notes.Note500 = int.Parse(reader["Notes500"].ToString());
+                        _notes.Note1000 = int.Parse(reader["Notes1000"].ToString());
                     }
                 }
             }
@@ -344,10 +390,10 @@ namespace wscore.Services
             return _deposit;
         }
 
-        
+
         private Deposit GetBills(Deposit Deposit)
         {
-            
+
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
@@ -538,7 +584,7 @@ namespace wscore.Services
                 //_event.UserId = userId;
                 //_event = EventInsert(_event);
 
-                
+
                 if (IsOnline(_terminal.IP))
                 {
                     try
@@ -678,7 +724,7 @@ namespace wscore.Services
                                 _event = EventUpdate(_event);
                                 _deposit.Status = DepositStatus.Processing;
                                 _deposit = DepositUpdate(_deposit);
-                               
+
                             }
                             else if (response == DepositStatus.Error.ToString())
                             {
@@ -686,7 +732,7 @@ namespace wscore.Services
                                 _event = EventUpdate(_event);
                                 _deposit.Status = DepositStatus.Error;
                                 _deposit = DepositUpdate(_deposit);
-                               
+
                             }
                             else if (response == DepositStatus.Busy.ToString())
                             {
@@ -694,7 +740,7 @@ namespace wscore.Services
                                 _event = EventUpdate(_event);
                                 _deposit.Status = DepositStatus.Busy;
                                 _deposit = DepositUpdate(_deposit);
-                               
+
                             }
                         }
 
@@ -705,7 +751,7 @@ namespace wscore.Services
                         _event = EventUpdate(_event);
                         _deposit.Status = DepositStatus.Error;
                         _deposit = DepositUpdate(_deposit);
-                       
+
                     }
                 }
                 else
@@ -771,11 +817,13 @@ namespace wscore.Services
 
                         if (resp.MessageString != null)
                         {
-                            if (resp.MessageString.Contains("processing")){
+                            if (resp.MessageString.Contains("processing"))
+                            {
                                 _deposit.Status = DepositStatus.Processing;
                                 //_deposit = DepositUpdate(_deposit);
                             }
-                            else {
+                            else
+                            {
                                 _deposit.Status = DepositStatus.Error;
                                 //_deposit = DepositUpdate(_deposit);
                             }
@@ -801,7 +849,7 @@ namespace wscore.Services
             _depositReturn.Amount = _deposit.Amount;
             _depositReturn.Date = DateTime.Now.ToString();
             _depositReturn.DepositId = _deposit.DepositId;
-           // _depositReturn.Number = _deposit.DepositNumber;
+            // _depositReturn.Number = _deposit.DepositNumber;
             _depositReturn.Status = _deposit.Status.ToString();
             _depositReturn.TerminalId = _deposit.TerminalId;
 
@@ -867,19 +915,17 @@ namespace wscore.Services
                     r.Bills = t.Notes;
                     r.CashBoxDoor = t.CashBoxDoor;
                     r.Description = t.Description;
-                   /* if (IsOnline(t.IP))
-                        r.Status = Entities.TerminalStatus.Online.ToString();
-                    else
-                        r.Status = Entities.TerminalStatus.Offline.ToString();*/
+                    /* if (IsOnline(t.IP))
+                         r.Status = Entities.TerminalStatus.Online.ToString();
+                     else
+                         r.Status = Entities.TerminalStatus.Offline.ToString();*/
                     r.TerminalDoor = t.TerminalDoor;
                     r.TimeOff = t.TimeOff;
                     r.TotalAmount = t.TotalAmount;
-                    
+
                     _listReturn.Add(r);
                 }
-                
             }
-            
             return _listReturn;
         }
 
@@ -950,7 +996,7 @@ namespace wscore.Services
 
             if (_deposit != null)
             {
-               
+
                 if ((_deposit.UserId == userId) & (_deposit.Status == DepositStatus.Processing) & (_deposit.TerminalId == TerminalId))
                 {
 
@@ -1012,7 +1058,7 @@ namespace wscore.Services
                 _event.Status = EventStatus.Error;
                 _event = EventUpdate(_event);
             }
-            
+
 
             var _eventReturn = new ActionReturn();
             _eventReturn.TerminalId = _event.TerminalId;
@@ -1034,7 +1080,7 @@ namespace wscore.Services
             {
                 throw new AppExceptions("Name is required");
             }
-            
+
             else
             {
                 var _terminal = GetTerminal(updateTerminal.TerminalId);
@@ -1048,7 +1094,7 @@ namespace wscore.Services
 
                 bool value = isNameUnique(updateTerminal.Name);
 
-                if(updateTerminal.Name != _terminal.Name)
+                if (updateTerminal.Name != _terminal.Name)
                 {
                     if (!value)
                     {
@@ -1057,37 +1103,253 @@ namespace wscore.Services
                 }
 
                 UpdateSQl(_updateTerminal);
-            }      
+            }
         }
 
         private void UpdateSQl(UpdateTerminalReturn _updateTerminal)
         {
-                using (MySqlConnection conn = GetConnection())
-                {
-                    conn.Open();
-                    MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
-                    cmd.ExecuteNonQuery();
-                }
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "'" +
+                                                    ", ContactName='" + _updateTerminal.ContactName + "', ContactPhone='" + _updateTerminal.ContactPhone + "' " +
+                                                    " WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
+                cmd.ExecuteNonQuery();
             }
+        }
 
-        public TotalAmount getAllTerminalsTotalAmount(int userId)
+        public TotalAmount getAllTerminalsTotalAmount()
         {
             TotalAmount totalAmount = new TotalAmount();
 
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount from Terminal", conn);
+                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount, count(*) as terminalTotal from Terminal", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
                         totalAmount.AllTotalAmount = double.Parse(reader["TotalAmount"].ToString());
+                        totalAmount.totalTerminals = int.Parse(reader["terminalTotal"].ToString());
                     }
                 }
             }
             return totalAmount;
+        }
+
+        public TotalAmount getAllTotalDeposit()
+        {
+            TotalAmount totalAmount = new TotalAmount();
+
+            //need to changed later for the actual date
+            DateTime startnows1 = DateTime.Now;
+            DateTime enddate1 = DateTime.Now.AddDays(+1);
+            var _start = startnows1.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
+            var _end = enddate1.ToString("yyyy-MM-dd 00:00:00");
+
+
+            DateTime startnows = DateTime.Now.AddDays(-21);
+            DateTime enddate = DateTime.Now.AddDays(-20);
+
+            var _start2 = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
+            var _end2 = enddate.ToString("yyyy-MM-dd 00:00:00");
+
+            var startnow = "2019-07-30 00:00:00"; //"8/20/2019 00:00:00"
+            var enddate2 = "2019-07-31 00:00:00";
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                //MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '"+ startnow.AddDays(+1) + "' group by convert(D.DateEnd, date) ", conn);
+                MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal " +
+                                                    "from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '" + enddate2 + "' group by convert(D.DateEnd, date) ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        totalAmount.TotalDeposit = double.Parse(reader["TotalDeposit"].ToString());
+                        totalAmount.totalTerminals = int.Parse(reader["totalterminal"].ToString());
+                    }
+                }
+            }
+            return totalAmount;
+        }
+
+        public List<TerminalsList> getAllOfflineTerminals()
+        {
+            List<TerminalsList> offlineTerminals = new List<TerminalsList>();
+
+            DateTime startnows1 = DateTime.Now;
+            var _date = startnows1.ToString("yyyy-MM-dd HH':'mm':'ss");
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select Name, Address, LastComunication from Terminal where LastComunication <= date_sub('" + _date + "' , Interval 30 minute) ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TerminalsList _offline = new TerminalsList();
+                        _offline.Name = reader["Name"].ToString();
+                        _offline.Address = reader["Address"].ToString();
+                        _offline.LastComunication = DateTime.Parse(reader["LastComunication"].ToString());
+
+                        offlineTerminals.Add(_offline);
+                    }
+                }
+            }
+            return offlineTerminals;
+        }
+
+        public TerminalsCapacity getTerminalsCapacity()
+        {
+            TerminalsCapacity terminalsCapacity = new TerminalsCapacity();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select totalSystemCapacity, currentNotes, ((currentNotes * 100) / totalSystemCapacity) as percentage " +
+                                                    "from(select sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes," +
+                                                    "(select sum(NotesCapacity) from Terminal) as totalSystemCapacity from TerminalNotes) as total", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        terminalsCapacity.TotalSystemCapacityNotes = int.Parse(reader["totalSystemCapacity"].ToString());
+                        terminalsCapacity.currentNotes = int.Parse(reader["currentNotes"].ToString());
+                        terminalsCapacity.percentageNotes = double.Parse(reader["percentage"].ToString());
+                    }
+                }
+            }
+            return terminalsCapacity;
+        }
+
+        public List<TerminalsList> getAllTerminalsPercentage()
+        {
+            List<TerminalsList> percetageTerminals = new List<TerminalsList>();
+            int percentageTerminal = 75; //changes to 75 %
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select Name, Address, percentageTerminal from (select Name, Address, ((currentNotes * 100) / totalCashBox) as percentageTerminal " +
+                                                    "from(select T.Name, T.Address, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes," +
+                                                    "sum(CashBoxCapacity) as totalCashBox from TerminalNotes N inner join Terminal T on T.TerminalId = N.TerminalId group by N.TerminalId) as total) as grandtotal" +
+                                                    " where percentageTerminal > '" + percentageTerminal + "'", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TerminalsList percentage = new TerminalsList();
+                        percentage.Name = reader["Name"].ToString();
+                        percentage.Address = reader["Address"].ToString();
+                        percentage.percentageTerminal = double.Parse(reader["percentageTerminal"].ToString());
+
+                        percetageTerminals.Add(percentage);
+                    }
+                }
+            }
+            return percetageTerminals;
+        }
+
+        public List<DepositListReturn> getDeposits(DepositRequest depositParam)
+        {
+            var _deposits = ListDeposits(depositParam);
+
+            return _deposits;
+        }
+
+        private List<DepositListReturn> ListDeposits(DepositRequest depositParam)
+        {
+            if (string.IsNullOrWhiteSpace(depositParam.StartDate.ToString()) || string.IsNullOrWhiteSpace(depositParam.EndDate.ToString()))
+            {
+                throw new AppExceptions("Date can not be empty");
+            }
+            string startDate = depositParam.StartDate.Value.ToString("yyyy-MM-dd 00:00:00");
+
+            DateTime _endDate = DateTime.Parse(depositParam.EndDate.ToString());
+            _endDate = _endDate.AddDays(+1);
+            string endDate = _endDate.ToString("yyyy-MM-dd 00:00:00");
+
+
+            List<DepositListReturn> _listDeposit = new List<DepositListReturn>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "select t.Name, t.Address, Amount, DepositNumber, DepositId, DateEnd, u.FirstName , u.LastName from Deposit d inner join Terminal t " +
+                    "on d.TerminalId = t.TerminalId inner join User u on d.UserId = u.UserId where d.DateEnd >= '" + startDate + "' and  d.DateEnd <= '" + endDate + "' ";
+
+                if (depositParam.TerminalId != null)
+                {
+                    sql += " and d.TerminalId = " + depositParam.TerminalId + " ";
+                }
+
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        DepositListReturn _deposits = new DepositListReturn();
+                        _deposits.TerminalName = reader["Name"].ToString();
+                        _deposits.TerminalAddress = reader["Address"].ToString();
+                        _deposits.Amount = int.Parse(reader["Amount"].ToString());
+                        _deposits.DepositId = int.Parse(reader["DepositId"].ToString());
+                        _deposits.DepositNumber = int.Parse(reader["DepositNumber"].ToString());
+                        _deposits.Date = DateTime.Parse(reader["DateEnd"].ToString());
+                        _deposits.UserNameDeposit = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _listDeposit.Add(_deposits);
+                    }
+                }
+            }
+            return _listDeposit;
+        }
+
+        public Notes DepositNotes(int? depositId)
+        {
+            Notes _depositnotes = null;
+            if (depositId != null)
+            {
+                _depositnotes = GetDepositNotes(depositId.Value);
+            }
+            else
+            {
+                throw new AppExceptions("Deposit Note not found");
+            }
+            return _depositnotes;
+        }
+
+        //function for the dropdowns for the reports, deposits and withdraw
+        public List<TerminalIdsReturn> GetTerminalsIds()
+        {
+            List<TerminalIdsReturn> _listTerminalIds = new List<TerminalIdsReturn>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select TerminalId, Name from Terminal ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TerminalIdsReturn _terminal = new TerminalIdsReturn();
+                        _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                        _terminal.Name = reader["Name"].ToString();
+                        _listTerminalIds.Add(_terminal);
+                    }
+                }
+            }
+            return _listTerminalIds;
         }
     }
 }

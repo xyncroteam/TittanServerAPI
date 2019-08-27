@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using wscore.Entities;
 using wscore.Helpers;
 using wscore.Services;
-
+using newapi.Helpers;
 
 namespace wscore.Controllers
 {
@@ -17,7 +17,7 @@ namespace wscore.Controllers
     [Route("user")]
     public class LoginController : Controller
     {
-       
+
         private ILoginService _loginService;
 
         public LoginController(ILoginService loginService)
@@ -86,48 +86,100 @@ namespace wscore.Controllers
             }
         }
 
-       // [Authorize(Roles = "Admin, User")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPost("register")]
-        public IActionResult Register([FromBody]RegisterUser statusParam)
+        public IActionResult Register([FromBody]UserRequest statusParam)
         {
             try
             {
-                //if (ModelState.IsValid)
-                //{
-                   // var result =  _userManager.CreateAsync(statusParam, statusParam.Password);
+                if (statusParam.accessCode == 0 )
+                {
+                    ModelState.Remove("accessCode");
+                }
 
-                    //if (result.IsCompleted)
-                    //{
-                        // _logger.LogInformation("User created a new account with password.");
-                        return Ok("User register successfully");
-                    //}
-                    //else
-                    //{
-                    //    //AddErrors(result);
-                    //    return BadRequest("Invalid data");
-                    //}                      
-                    
-                //}
-                //else
-                //{
-                //    return BadRequest("Invalid data");
-                //}
-               
+                if (ModelState.IsValid)
+                {
+                    _loginService.CreateUser(statusParam);
+                    return Ok("User register successfully");
+                }
+                else
+                {
+                    return BadRequest("Invalid data, please check the values before.");
+                }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Internal server error");
+                return BadRequest(new { message = ex.Message });
             }
         }
 
-        //private void AddErrors(IdentityResult result)
-        //{
-        //    foreach (var error in result.Errors)
-        //    {
-        //        ModelState.AddModelError(string.Empty, error.Description);
-        //    }
-        //}
+        [Authorize(Roles = "Admin, User")]
+        [HttpPost("updateuser")]
+        public IActionResult UpdateUser([FromBody]UserRequest statusParam)
+        {
+            try
+            {
+                if (statusParam == null)
+                {
+                    throw new AppExceptions("Invalid data");
+                }
+                if (string.IsNullOrEmpty(statusParam.Password))
+                {
+                    ModelState.Remove("Password");
+                }
+                if (ModelState.IsValid)
+                {
+                    _loginService.UpdateUser(statusParam);
+                    return Ok("User updated successfully");
+                }
+                else
+                {
+                    return BadRequest("Invalid data, please check the values before.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("getAllRoles")]
+        public IActionResult GetAllUserRols()
+        {
+            var _getAllRoles = _loginService.Roles();
+            return Ok(_getAllRoles);
+        }
+
+        [Authorize(Roles = "Admin, User")]
+        [HttpPost("getrolbyid")]
+        public IActionResult GetRolById([FromBody]Rols statusParam)
+        {
+            try
+            {
+                var _getRolById = _loginService.getRolById(statusParam);
+                return Ok(_getRolById);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin, User")]
+        [HttpPost("getrolbyname")]
+        public IActionResult GetRolByName([FromBody]Rols statusParam)
+        {
+            try
+            {
+                var _getRolByName = _loginService.getRolByName(statusParam);
+                return Ok(_getRolByName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

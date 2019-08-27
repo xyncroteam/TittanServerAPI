@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using newapi.Helpers;
 using wscore.Entities;
 using wscore.Helpers;
 using wscore.Services;
@@ -357,13 +358,93 @@ namespace wscore.Controllers
             }
         }
 
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("deposits")]
+        public IActionResult GetDetposits([FromBody]DepositRequest depositParam)
+        {
+            try
+            {
+                if (depositParam == null)
+                {
+                    throw new AppExceptions("Date invalid ");
+                }
+                var _statusReturn = _actionService.getDeposits(depositParam);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("depositNotes")]
+        public IActionResult GetDepositNotes([FromBody]DepositNotesRequest depositParam)
+        {
+            try
+            {
+                var _depositReturn = _actionService.DepositNotes(depositParam.DepositId);
+                return Ok(_depositReturn);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("getTerminalsIds")]
+        public IActionResult GetAllTerminalsIds()
+        {
+            var _statusReturn = _actionService.GetTerminalsIds(); 
+            return Ok(_statusReturn);
+        }
+
+
+        #region DashBoard functions
+
         [Authorize(Roles = "Admin,User")]
         [HttpPost("allTerminalsTotalAmount")]
         public IActionResult GetAllTerminaslTotalAmount()
         {
-            var _allTotalTerminaslAmountReturn = _actionService.getAllTerminalsTotalAmount(GetUserId());
+            var _allTotalTerminaslAmountReturn = _actionService.getAllTerminalsTotalAmount();
             return Ok(_allTotalTerminaslAmountReturn);
         }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("totalDeposit")]
+        public IActionResult GetAllTotalDeposit()
+        {
+            var _allTotalTerminaslAmountReturn = _actionService.getAllTotalDeposit();
+            return Ok(_allTotalTerminaslAmountReturn);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("offlineterminals")]
+        public IActionResult GetAllOfflineTerminals()
+        {
+            var _allOfflineTerminals = _actionService.getAllOfflineTerminals();
+            return Ok(_allOfflineTerminals);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminalscapacity")]
+        public IActionResult GetTerminalsCapacity()
+        {
+            var _terminalsCapacity = _actionService.getTerminalsCapacity();
+            return Ok(_terminalsCapacity);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminalspercentage")]
+        public IActionResult GetAllTerminalsPercentage()
+        {
+            var _terminalsCapacity = _actionService.getAllTerminalsPercentage();
+            return Ok(_terminalsCapacity);
+        }
+        #endregion
 
     }
 }
