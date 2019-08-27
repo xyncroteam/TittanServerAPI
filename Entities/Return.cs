@@ -64,6 +64,8 @@ namespace wscore.Entities
         public string Address { get; set; }
         // [Required]
         public string Name { get; set; }
+        public string ContactName { get; set; }
+        public string ContactPhone { get; set; }
     }
 
     public class TotalAmount

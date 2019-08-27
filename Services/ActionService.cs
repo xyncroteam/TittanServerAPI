@@ -120,6 +120,8 @@ namespace wscore.Services
                         _terminal.Notes = int.Parse(reader["Notes"].ToString());
                         _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
                         _terminal.TotalAmount = int.Parse(reader["TotalAmount"].ToString());
+                        _terminal.ContactName = reader["ContactName"].ToString();
+                        _terminal.ContactPhone = reader["ContactPhone"].ToString();
                     }
                 }
             }
@@ -1103,7 +1105,8 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "' " +
+                MySqlCommand cmd = new MySqlCommand("UPDATE Terminal SET Name = '" + _updateTerminal.Name + "' , Address = '" + _updateTerminal.Address + "' , Description= '" + _updateTerminal.Description + "'" +
+                                                    ", ContactName='" + _updateTerminal.ContactName + "', ContactPhone='" + _updateTerminal.ContactPhone + "' " +
                                                     " WHERE TerminalId = " + _updateTerminal.TerminalId.ToString() + ";", conn);
                 cmd.ExecuteNonQuery();
             }

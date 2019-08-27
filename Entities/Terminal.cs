@@ -14,6 +14,8 @@ namespace wscore.Entities
         public string Address { get; set; }
         public string IP { get; set; }
         public TerminalStatus Status { get; set; }
+        public string ContactName { get; set; }
+        public string ContactPhone { get; set; }
     }
 
     public enum TerminalStatus
