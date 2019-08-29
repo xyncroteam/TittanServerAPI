@@ -49,6 +49,8 @@ namespace wscore.Entities
         public int TimeOff { get; set; }
         public int TotalAmount { get; set; }
         public Notes Notes { get; set; }
+        public string ContactName { get; set; }
+        public string ContactPhone { get; set; }
     }
     public class TerminalIdsReturn
     {

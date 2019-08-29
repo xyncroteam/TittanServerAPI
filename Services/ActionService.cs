@@ -949,6 +949,8 @@ namespace wscore.Services
                 _statusReturn.TimeOff = _terminal.TimeOff;
                 _statusReturn.TotalAmount = _terminal.TotalAmount;
                 _statusReturn.Notes = GetTerminalNotes(_terminal.TerminalId);
+                _statusReturn.ContactName = _terminal.ContactName;
+                _statusReturn.ContactPhone = _terminal.ContactPhone;
             }
             //missing validation when terminal does not exist  shoudl trow and errror.
             else
