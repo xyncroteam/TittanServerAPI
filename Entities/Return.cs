@@ -104,5 +104,17 @@ namespace wscore.Entities
         public string UserNameDeposit { get; set; }
     }
 
+    public class TerminalCapacityBills
+    {
+        public int TerminalId { get; set; }
+        public int totalCashBox { get; set; }
+        public double cashBoxPercentage { get; set; }
+    }
+
+    public class TerminalRequest
+    {
+        public int? TerminalId { get; set; }
+    }
+
 
 }

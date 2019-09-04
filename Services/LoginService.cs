@@ -527,6 +527,7 @@ namespace wscore.Services
                 throw new AppExceptions("User Id is required");
             }
             else
+
             {
                 var user = GetUserByIdIncludePassword(statusParam.Id);
                 var _updateUser = statusParam;

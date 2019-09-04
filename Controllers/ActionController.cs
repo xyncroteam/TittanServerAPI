@@ -444,6 +444,23 @@ namespace wscore.Controllers
             var _terminalsCapacity = _actionService.getAllTerminalsPercentage();
             return Ok(_terminalsCapacity);
         }
+
+        [Authorize(Roles = "Admin, USer")]
+        [HttpPost("terminalbillcapacity")]
+        public IActionResult GetTerminalBillCapacity([FromBody]TerminalRequest terminalIdparam)
+        {
+            try
+            {
+                var capacityBills = _actionService.GetTerminalCapacityBills(terminalIdparam.TerminalId);
+                return Ok(capacityBills);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
         #endregion
 
     }

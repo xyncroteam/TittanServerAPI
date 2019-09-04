@@ -41,6 +41,7 @@ namespace wscore.Services
         List<DepositListReturn> getDeposits(DepositRequest depositParam);
         Notes DepositNotes(int? depositId);
         List<TerminalIdsReturn> GetTerminalsIds();
+        TerminalCapacityBills GetTerminalCapacityBills(int? TerminalId);
     }
 
     public class ActionService : IActionService
@@ -193,6 +194,27 @@ namespace wscore.Services
                 }
             }
             return _notes;
+        }
+
+        private TerminalCapacityBills GetTerminalCapacityBills(int terminalId)
+        {
+            TerminalCapacityBills billsCapacity = null;
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select TerminalId, totalCashBox, ((currentNotes * 100)/totalCashBox) as cashboxpercentage from(select TerminalId, sum(CashBoxCapacity) as totalCashBox, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes from TerminalNotes group by TerminalId) as total where TerminalId=" + terminalId.ToString(), conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        billsCapacity = new TerminalCapacityBills();
+                        billsCapacity.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                        billsCapacity.totalCashBox = int.Parse(reader["totalCashBox"].ToString());
+                        billsCapacity.cashBoxPercentage = double.Parse(reader["cashboxpercentage"].ToString());
+                    }
+                }
+            }
+            return billsCapacity;
         }
 
         private Notes GetTerminalNotes(int terminalId)
@@ -1352,6 +1374,19 @@ namespace wscore.Services
                 }
             }
             return _listTerminalIds;
+        }
+        public TerminalCapacityBills GetTerminalCapacityBills(int? TerminalId)
+        {
+            TerminalCapacityBills billsCapacity = null;
+            if (TerminalId != null)
+            {
+                billsCapacity = GetTerminalCapacityBills(TerminalId.Value);
+            }
+            else
+            {
+                throw new AppExceptions("Terminal Note not found");
+            }
+            return billsCapacity;
         }
     }
 }
