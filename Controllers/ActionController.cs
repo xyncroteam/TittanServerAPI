@@ -379,6 +379,21 @@ namespace wscore.Controllers
         }
 
         [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminaldeposits")]
+        public IActionResult GetTerminalDeposits([FromBody]TerminalRequest depositParam)
+        {
+            try
+            {
+                var _statusReturn = _actionService.getDepositsByTerminal(depositParam.TerminalId);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
         [HttpPost("depositNotes")]
         public IActionResult GetDepositNotes([FromBody]DepositNotesRequest depositParam)
         {
@@ -401,6 +416,8 @@ namespace wscore.Controllers
             var _statusReturn = _actionService.GetTerminalsIds(); 
             return Ok(_statusReturn);
         }
+
+
 
 
         #region DashBoard functions
@@ -459,6 +476,37 @@ namespace wscore.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [Authorize(Roles = "Admin, USer")]
+        [HttpPost("totalsystembills")]
+        public IActionResult GetTotalTerminalBills([FromBody]TerminalRequest terminalIdparam)
+        {
+            try
+            {
+                var totalsystemBills = _actionService.getTotalTerminalBills(terminalIdparam.TerminalId);
+                return Ok(totalsystemBills);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin, USer")]
+        [HttpPost("cahboxbills")]
+        public IActionResult GetCashBoxNumberBills([FromBody]CashBoxRequest cashBoxparam)
+        {
+            try
+            {
+                var cashBoxBills = _actionService.GetCashBoxBills(cashBoxparam);
+                return Ok(cashBoxBills);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
 
 
         #endregion

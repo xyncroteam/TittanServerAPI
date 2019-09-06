@@ -42,6 +42,9 @@ namespace wscore.Services
         Notes DepositNotes(int? depositId);
         List<TerminalIdsReturn> GetTerminalsIds();
         TerminalCapacityBills GetTerminalCapacityBills(int? TerminalId);
+        List<DailyDepositReturn> getDepositsByTerminal(int? TerminalId);
+        List<TotalTerminalBills> getTotalTerminalBills(int? TerminalId);
+        CashBoxNotes GetCashBoxBills(CashBoxRequest cashBoxparam);
     }
 
     public class ActionService : IActionService
@@ -202,7 +205,9 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select TerminalId, totalCashBox, ((currentNotes * 100)/totalCashBox) as cashboxpercentage from(select TerminalId, sum(CashBoxCapacity) as totalCashBox, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes from TerminalNotes group by TerminalId) as total where TerminalId=" + terminalId.ToString(), conn);
+                MySqlCommand cmd = new MySqlCommand("select TerminalId, totalCashBox, ((currentNotes * 100)/totalCashBox) as cashboxpercentage from(select TerminalId, " +
+                    "sum(CashBoxCapacity) as totalCashBox, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes" +
+                    " from TerminalNotes group by TerminalId) as total where TerminalId=" + terminalId.ToString(), conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -215,6 +220,68 @@ namespace wscore.Services
                 }
             }
             return billsCapacity;
+        }
+
+        private List<TotalTerminalBills> GetTerminalTotalBills(int terminalId)
+        {
+            List<TotalTerminalBills> totalTerminalBills = new List<TotalTerminalBills>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select TerminalId, CashBoxCapacity, CashBoxNumber, CurrentQtyCashbox, totalAmount from(select TerminalId, CashBoxCapacity, CashBoxNumber," +
+                    " sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as CurrentQtyCashbox," +
+                    " ((sum(Notes1000)) * 1000 + (sum(Notes500)) * 500 + (sum(Notes200)) * 200 + (sum(Notes100)) * 100 + (sum(Notes50)) * 50 + " +
+                    "(sum(Notes20)) * 20 + (sum(Notes10)) * 10 + (sum(Notes5)) * 5 + (sum(Notes2)) * 2 + (sum(Notes1)) * 1) as totalAmount " +
+                    "from TerminalNotes group by TerminalId, CashBoxCapacity, CashBoxNumber) as cash where TerminalId=" + terminalId.ToString(), conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TotalTerminalBills totalBills = new TotalTerminalBills();
+                        totalBills.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                        totalBills.CashBoxCapacity = int.Parse(reader["CashBoxCapacity"].ToString());
+                        totalBills.CashBoxNumber = int.Parse(reader["CashBoxNumber"].ToString());
+                        totalBills.CurrentQtyCashbox = int.Parse(reader["CurrentQtyCashbox"].ToString());
+                        totalBills.TotalAmount = int.Parse(reader["totalAmount"].ToString());
+                        totalTerminalBills.Add(totalBills);
+                    }
+                }
+            }
+            return totalTerminalBills;
+        }
+        private CashBoxNotes GetCashBoxNumberBills(int? TerminalId, int? CashBoxNumber)
+        {
+            CashBoxNotes cashBoxBills = null;
+            using (MySqlConnection conn = GetConnection())
+            {
+               // MySqlCommand cmd = new MySqlCommand("select CashBoxNumber, Notes1000, Notes500 , Notes200 , Notes100, Notes50, Notes20, Notes10, Notes5, Notes2, Notes1 " +
+               //    "from TerminalNotes where TerminalId=" + TerminalId.ToString(), conn);
+               
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select CashBoxNumber, Notes1000, Notes500 , Notes200 , Notes100, Notes50, Notes20, Notes10, Notes5, Notes2, Notes1 " +
+                    "from TerminalNotes where TerminalId= '" + TerminalId.ToString() + "' and CashBoxNumber=" + CashBoxNumber.ToString() , conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        cashBoxBills = new CashBoxNotes();
+                        cashBoxBills.CashBoxNumber = int.Parse(reader["CashBoxNumber"].ToString());
+                        cashBoxBills.Note1 = int.Parse(reader["Notes1"].ToString());
+                        cashBoxBills.Note2 = int.Parse(reader["Notes2"].ToString());
+                        cashBoxBills.Note5 = int.Parse(reader["Notes5"].ToString());
+                        cashBoxBills.Note10 = int.Parse(reader["Notes10"].ToString());
+                        cashBoxBills.Note20 = int.Parse(reader["Notes20"].ToString());
+                        cashBoxBills.Note50 = int.Parse(reader["Notes50"].ToString());
+                        cashBoxBills.Note100 = int.Parse(reader["Notes100"].ToString());
+                        cashBoxBills.Note200 = int.Parse(reader["Notes200"].ToString());
+                        cashBoxBills.Note500 = int.Parse(reader["Notes500"].ToString());
+                        cashBoxBills.Note1000 = int.Parse(reader["Notes1000"].ToString());
+
+                    }
+                }
+            }
+            return cashBoxBills;
         }
 
         private Notes GetTerminalNotes(int terminalId)
@@ -1281,15 +1348,8 @@ namespace wscore.Services
             }
             return percetageTerminals;
         }
-
+        //functions takes as parameters start, end date and terminal id
         public List<DepositListReturn> getDeposits(DepositRequest depositParam)
-        {
-            var _deposits = ListDeposits(depositParam);
-
-            return _deposits;
-        }
-
-        private List<DepositListReturn> ListDeposits(DepositRequest depositParam)
         {
             if (string.IsNullOrWhiteSpace(depositParam.StartDate.ToString()) || string.IsNullOrWhiteSpace(depositParam.EndDate.ToString()))
             {
@@ -1301,7 +1361,40 @@ namespace wscore.Services
             _endDate = _endDate.AddDays(+1);
             string endDate = _endDate.ToString("yyyy-MM-dd 00:00:00");
 
+            var _deposits = ListDeposits(startDate, endDate, depositParam.TerminalId);
 
+            return _deposits;
+        }
+        //function only takes as parameters terminalid no date is need it
+        public List<DailyDepositReturn> getDepositsByTerminal(int? TerminalId)
+        {
+            List<DailyDepositReturn> _deposits = null;
+            if (TerminalId != null)
+            {
+
+                DateTime end = DateTime.Now.AddDays(+1);
+                string endDate = end.ToString("yyyy-MM-dd 00:00:00"); //today's date is the ending
+
+                var _endDate = "2019-01-26 00:00:00"; //needs to be changed
+
+                //  DateTime _endDate = DateTime.Parse(depositParam.EndDate.ToString());
+                DateTime _startDate = end.AddDays(-5);
+                string startDate = _startDate.ToString("yyyy-MM-dd 00:00:00");
+
+                var _startdate = "2019-01-22 00:00:00"; //needs to be changed
+
+                _deposits = ListDailyDeposits(_startdate, _endDate, TerminalId);
+                //_deposits = ListDailyDeposits(startDate, endDate, TerminalId);
+            }
+            else
+            {
+                throw new AppExceptions("Terminal Note not found");
+            }
+            return _deposits;
+        }
+
+        private List<DepositListReturn> ListDeposits(string startDate, string endDate, int? TerminalId)
+        {
             List<DepositListReturn> _listDeposit = new List<DepositListReturn>();
 
             using (MySqlConnection conn = GetConnection())
@@ -1312,9 +1405,9 @@ namespace wscore.Services
                 sql = "select t.Name, t.Address, Amount, DepositNumber, DepositId, DateEnd, u.FirstName , u.LastName from Deposit d inner join Terminal t " +
                     "on d.TerminalId = t.TerminalId inner join User u on d.UserId = u.UserId where d.DateEnd >= '" + startDate + "' and  d.DateEnd <= '" + endDate + "' ";
 
-                if (depositParam.TerminalId != null)
+                if (TerminalId != null)
                 {
-                    sql += " and d.TerminalId = " + depositParam.TerminalId + " ";
+                    sql += " and d.TerminalId = " + TerminalId + " ";
                 }
 
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
@@ -1331,6 +1424,35 @@ namespace wscore.Services
                         _deposits.DepositNumber = int.Parse(reader["DepositNumber"].ToString());
                         _deposits.Date = DateTime.Parse(reader["DateEnd"].ToString());
                         _deposits.UserNameDeposit = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _listDeposit.Add(_deposits);
+                    }
+                }
+            }
+            return _listDeposit;
+        }
+
+        private List<DailyDepositReturn> ListDailyDeposits(string startDate, string endDate, int? TerminalId)
+        {
+            List<DailyDepositReturn> _listDeposit = new List<DailyDepositReturn>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "select TerminalId, sum(Amount) as TotalDeposit, convert(DateEnd, date) as _date from Deposit  where " +
+                    "DateEnd >= '" + startDate + "' and DateEnd <= '" + endDate + "' and TerminalId = " + TerminalId + " group by TerminalId, convert(DateEnd, date) ";
+
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        DailyDepositReturn _deposits = new DailyDepositReturn();
+                        _deposits.TerminalId = int.Parse(reader["TerminalId"].ToString());
+                        _deposits.TotalDeposit = int.Parse(reader["TotalDeposit"].ToString());
+                        _deposits.Date = DateTime.Parse(reader["_date"].ToString());
                         _listDeposit.Add(_deposits);
                     }
                 }
@@ -1384,9 +1506,37 @@ namespace wscore.Services
             }
             else
             {
-                throw new AppExceptions("Terminal Note not found");
+                throw new AppExceptions("Terminal not found");
             }
             return billsCapacity;
+        }
+
+        public List<TotalTerminalBills> getTotalTerminalBills(int? TerminalId)
+        {
+            List<TotalTerminalBills> totalbills = null;
+            if (TerminalId != null)
+            {
+                totalbills = GetTerminalTotalBills(TerminalId.Value);
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }
+            return totalbills;
+        }
+
+        public CashBoxNotes GetCashBoxBills(CashBoxRequest cashBoxparam)
+        {
+            CashBoxNotes cashBoxBills = null;
+            if (cashBoxparam.TerminalId != null && cashBoxparam.CashBoxNumber != null)
+            {
+                cashBoxBills = GetCashBoxNumberBills(cashBoxparam.TerminalId, cashBoxparam.CashBoxNumber);
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }
+            return cashBoxBills;
         }
     }
 }

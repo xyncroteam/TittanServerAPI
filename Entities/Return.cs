@@ -111,9 +111,31 @@ namespace wscore.Entities
         public double cashBoxPercentage { get; set; }
     }
 
+    public class TotalTerminalBills
+    {
+        public int TerminalId { get; set; }
+        public int CashBoxCapacity { get; set; }
+        public int CashBoxNumber { get; set; }
+        public int CurrentQtyCashbox { get; set; }
+        public int TotalAmount { get; set; }
+    }
+
     public class TerminalRequest
     {
         public int? TerminalId { get; set; }
+    }
+
+    public class DailyDepositReturn
+    {
+        public int TerminalId { get; set; }
+        public int TotalDeposit { get; set; }
+        public DateTime Date { get; set; }
+    }
+
+    public class CashBoxRequest
+    {
+        public int? TerminalId { get; set; }
+        public int? CashBoxNumber { get; set; }
     }
 
 
