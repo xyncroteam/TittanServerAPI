@@ -1609,7 +1609,7 @@ namespace wscore.Services
                 }
                 else if (Option == OpenDoorOption)
                 {
-                    sql += " and (E.EventTypeId = ' " + OpenDoorOption + " ' `) ";
+                    sql += " and (E.EventTypeId = ' " + OpenDoorOption + " ' ) ";
                 }
                 else if (Option == ClosedDoorOption)
                 {
