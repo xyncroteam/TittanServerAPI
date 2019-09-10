@@ -384,6 +384,10 @@ namespace wscore.Controllers
         {
             try
             {
+                if (depositParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
                 var _statusReturn = _actionService.getDepositsByTerminal(depositParam.TerminalId);
                 return Ok(_statusReturn);
             }
@@ -525,6 +529,26 @@ namespace wscore.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("latestterminalevents")]
+        public IActionResult GetLatestEventsByTerminal([FromBody]TerminalRequest depositParam)
+        {
+            try
+            {
+                if (depositParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _statusReturn = _actionService.getEventsByTerminal(depositParam.TerminalId);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
         #endregion
     }
 }

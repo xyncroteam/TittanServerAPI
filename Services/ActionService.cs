@@ -46,6 +46,7 @@ namespace wscore.Services
         List<TotalTerminalBills> getTotalTerminalBills(int? TerminalId);
         CashBoxNotes GetCashBoxBills(CashBoxRequest cashBoxparam);
         List<EventListReturn> getEventsByTerminal(EventRequest eventRequest);
+        List<EventListReturn> getEventsByTerminal(int? TerminalId);
     }
 
     public class ActionService : IActionService
@@ -1546,11 +1547,11 @@ namespace wscore.Services
             {
                 throw new AppExceptions("Date can not be empty");
             }
-            if(eventRequest.Option == null)
+            if (eventRequest.Option == null)
             {
                 throw new AppExceptions("Option can not be empty");
             }
-            if(eventRequest.Option != 0 && eventRequest.Option != 1 && eventRequest.Option != 3 && eventRequest.Option != 9)
+            if (eventRequest.Option != 0 && eventRequest.Option != 1 && eventRequest.Option != 3 && eventRequest.Option != 9)
             {
                 throw new AppExceptions("No data content available");
             }
@@ -1567,6 +1568,20 @@ namespace wscore.Services
                 endDate = _endDate.ToString("yyyy-MM-dd 00:00:00");
 
                 _events = ListEvents(startDate, endDate, eventRequest.TerminalId, eventRequest.Option);
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }
+            return _events;
+        }
+        public List<EventListReturn> getEventsByTerminal(int? TerminalId)
+        {
+            List<EventListReturn> _events = null;
+
+            if (TerminalId != null)
+            {
+                _events = ListEvents(TerminalId);
             }
             else
             {
@@ -1614,12 +1629,43 @@ namespace wscore.Services
                         _events.Date = DateTime.Parse(reader["Date"].ToString());
                         _events.Description = reader["Description"].ToString();
                         _events.UserNameEvent = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
-                        _events.DepositId =  reader["DepositId"] != DBNull.Value ? int.Parse(reader["DepositId"].ToString()) : 0 ;
+                        _events.DepositId = reader["DepositId"] != DBNull.Value ? int.Parse(reader["DepositId"].ToString()) : 0;
                         _listEvents.Add(_events);
                     }
                 }
             }
             return _listEvents;
         }
+        private List<EventListReturn> ListEvents( int? TerminalId)
+        {
+            List<EventListReturn> _listEvents = new List<EventListReturn>();
+            int limit = 5;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "select TerminalId, Date, U.FirstName, U.LastName, Et.Description from Event  E inner join EventType Et on E.EventTypeId = Et.EventId " +
+                    "inner join User U on E.UserId = U.UserId where E.TerminalId = '" + TerminalId + "' order by Date desc LIMIT " + limit + " ";
+
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        EventListReturn _events = new EventListReturn();
+                        _events.Date = DateTime.Parse(reader["Date"].ToString());
+                        _events.Description = reader["Description"].ToString();
+                        _events.UserNameEvent = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _listEvents.Add(_events);
+                    }
+                }
+            }
+            return _listEvents;
+        }
+
+      
     }
 }
