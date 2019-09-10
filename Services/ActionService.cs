@@ -45,6 +45,7 @@ namespace wscore.Services
         List<DailyDepositReturn> getDepositsByTerminal(int? TerminalId);
         List<TotalTerminalBills> getTotalTerminalBills(int? TerminalId);
         CashBoxNotes GetCashBoxBills(CashBoxRequest cashBoxparam);
+        List<EventListReturn> getEventsByTerminal(EventRequest eventRequest);
     }
 
     public class ActionService : IActionService
@@ -255,12 +256,12 @@ namespace wscore.Services
             CashBoxNotes cashBoxBills = null;
             using (MySqlConnection conn = GetConnection())
             {
-               // MySqlCommand cmd = new MySqlCommand("select CashBoxNumber, Notes1000, Notes500 , Notes200 , Notes100, Notes50, Notes20, Notes10, Notes5, Notes2, Notes1 " +
-               //    "from TerminalNotes where TerminalId=" + TerminalId.ToString(), conn);
-               
+                // MySqlCommand cmd = new MySqlCommand("select CashBoxNumber, Notes1000, Notes500 , Notes200 , Notes100, Notes50, Notes20, Notes10, Notes5, Notes2, Notes1 " +
+                //    "from TerminalNotes where TerminalId=" + TerminalId.ToString(), conn);
+
                 conn.Open();
                 MySqlCommand cmd = new MySqlCommand("select CashBoxNumber, Notes1000, Notes500 , Notes200 , Notes100, Notes50, Notes20, Notes10, Notes5, Notes2, Notes1 " +
-                    "from TerminalNotes where TerminalId= '" + TerminalId.ToString() + "' and CashBoxNumber=" + CashBoxNumber.ToString() , conn);
+                    "from TerminalNotes where TerminalId= '" + TerminalId.ToString() + "' and CashBoxNumber=" + CashBoxNumber.ToString(), conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -1537,6 +1538,88 @@ namespace wscore.Services
                 throw new AppExceptions("Terminal not found");
             }
             return cashBoxBills;
+        }
+
+        public List<EventListReturn> getEventsByTerminal(EventRequest eventRequest)
+        {
+            if (string.IsNullOrWhiteSpace(eventRequest.StartDate.ToString()) || string.IsNullOrWhiteSpace(eventRequest.EndDate.ToString()))
+            {
+                throw new AppExceptions("Date can not be empty");
+            }
+            if(eventRequest.Option == null)
+            {
+                throw new AppExceptions("Option can not be empty");
+            }
+            if(eventRequest.Option != 0 && eventRequest.Option != 1 && eventRequest.Option != 3 && eventRequest.Option != 9)
+            {
+                throw new AppExceptions("No data content available");
+            }
+            List<EventListReturn> _events = null;
+            string startDate = "";
+            string endDate = "";
+
+            if (eventRequest.TerminalId != null)
+            {
+                startDate = eventRequest.StartDate.Value.ToString("yyyy-MM-dd 00:00:00");
+
+                DateTime _endDate = DateTime.Parse(eventRequest.EndDate.ToString());
+                _endDate = _endDate.AddDays(+1);
+                endDate = _endDate.ToString("yyyy-MM-dd 00:00:00");
+
+                _events = ListEvents(startDate, endDate, eventRequest.TerminalId, eventRequest.Option);
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }
+            return _events;
+        }
+        private List<EventListReturn> ListEvents(string startDate, string endDate, int? TerminalId, int? Option)
+        {
+            List<EventListReturn> _listEvents = new List<EventListReturn>();
+            int OpenDoorOption = 3;
+            int ClosedDoorOption = 9;
+            int DepositOption = 1;
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "select E.terminalId,D.DepositId ,Et.Description, E.EventId, Date, U.FirstName, U.LastName from Event E inner join EventType Et on E.EventTypeId = Et.EventId" +
+                    " inner join User U on E.UserId = U.UserId left join Deposit D on E.EventId = D.EventId where E.TerminalId = '" + TerminalId + "' and E.Date >= '" + startDate + "' and E.Date <= '" + endDate + "' ";
+
+                if (Option == 0)
+                {
+                    sql += " and (E.EventTypeId = ' " + OpenDoorOption + " ' or E.EventTypeId = ' " + ClosedDoorOption + " ' or E.EventTypeId = ' " + DepositOption + " ') ";
+                }
+                else if (Option == OpenDoorOption)
+                {
+                    sql += " and (E.EventTypeId = ' " + OpenDoorOption + " ' `) ";
+                }
+                else if (Option == ClosedDoorOption)
+                {
+                    sql += " and ( E.EventTypeId = ' " + ClosedDoorOption + " ' ) ";
+                }
+                else if (Option == DepositOption)
+                {
+                    sql += " and ( E.EventTypeId = ' " + DepositOption + " ') ";
+                }
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        EventListReturn _events = new EventListReturn();
+                        _events.Date = DateTime.Parse(reader["Date"].ToString());
+                        _events.Description = reader["Description"].ToString();
+                        _events.UserNameEvent = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _events.DepositId =  reader["DepositId"] != DBNull.Value ? int.Parse(reader["DepositId"].ToString()) : 0 ;
+                        _listEvents.Add(_events);
+                    }
+                }
+            }
+            return _listEvents;
         }
     }
 }

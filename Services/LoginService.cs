@@ -104,7 +104,7 @@ namespace wscore.Services
 
             using (MySqlConnection conn = GetConnection())
             {
-                conn.Open();
+                conn.Open();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
                 MySqlCommand cmd = new MySqlCommand("select * from User a join UserGroup b on a.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where UserName='" + userName + "' and Password='" + password + "'", conn);
 
                 using (var reader = cmd.ExecuteReader())

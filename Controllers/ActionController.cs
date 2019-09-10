@@ -413,7 +413,7 @@ namespace wscore.Controllers
         [HttpPost("getTerminalsIds")]
         public IActionResult GetAllTerminalsIds()
         {
-            var _statusReturn = _actionService.GetTerminalsIds(); 
+            var _statusReturn = _actionService.GetTerminalsIds();
             return Ok(_statusReturn);
         }
 
@@ -507,10 +507,25 @@ namespace wscore.Controllers
             }
         }
 
-
-
+        [Authorize(Roles = "Admin, USer")]
+        [HttpPost("terminalevents")]
+        public IActionResult GetTerminalEvents([FromBody]EventRequest eventparam)
+        {
+            try
+            {
+                if(eventparam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _statusReturn = _actionService.getEventsByTerminal(eventparam);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         #endregion
-
     }
 }
 

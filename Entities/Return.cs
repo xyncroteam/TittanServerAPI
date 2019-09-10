@@ -138,5 +138,23 @@ namespace wscore.Entities
         public int? CashBoxNumber { get; set; }
     }
 
+    public class EventRequest
+    {
+        [Required]
+        [DataType(DataType.Date)]
+        public DateTime? StartDate { get; set; }
+        [Required]
+        [DataType(DataType.Date)]//
+        public DateTime? EndDate { get; set; }
+        public int? TerminalId { get; set; }
+        public int? Option { get; set; }
+    }
+    public class EventListReturn
+    {
+        public int DepositId { get; set; }
+        public string Description { get; set; }
+        public DateTime Date { get; set; }
+        public string UserNameEvent { get; set; }
+    }
 
 }

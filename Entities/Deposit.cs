@@ -59,10 +59,8 @@ namespace wscore.Entities
     {
         public int? DepositId { get; set; }
     }
+
    
-
-
-
     public class Note
     {
         public string NoteId { get; set; }
