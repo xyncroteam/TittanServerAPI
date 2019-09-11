@@ -421,6 +421,24 @@ namespace wscore.Controllers
             return Ok(_statusReturn);
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("asignUserToTerminal")]
+        public IActionResult AsignUserToTerminal(AsignTerminalRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                _actionService.asignUserToTerminal(requestParam);
+                return Ok("User asigned to terminal");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
 

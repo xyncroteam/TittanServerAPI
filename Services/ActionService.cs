@@ -47,6 +47,7 @@ namespace wscore.Services
         CashBoxNotes GetCashBoxBills(CashBoxRequest cashBoxparam);
         List<EventListReturn> getEventsByTerminal(EventRequest eventRequest);
         List<EventListReturn> getEventsByTerminal(int? TerminalId);
+        void asignUserToTerminal(AsignTerminalRequest requestParam);
     }
 
     public class ActionService : IActionService
@@ -1218,7 +1219,9 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount, count(*) as terminalTotal from Terminal", conn);
+                //MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount, count(*) as terminalTotal from Terminal", conn);
+                MySqlCommand cmd = new MySqlCommand("select count(Distinct terminalId) as terminalTotal, ((sum(Notes1000))*1000 + (sum(Notes500))*500 + (sum(Notes200))*200" +
+                    " + (sum(Notes100))*100 + (sum(Notes50))*50 + (sum(Notes20))*20 + (sum(Notes10))*10 + (sum(Notes5))*5 + (sum(Notes2))*2 + (sum(Notes1))*1 ) as TotalAmount from TerminalNotes ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -1666,6 +1669,18 @@ namespace wscore.Services
             return _listEvents;
         }
 
-      
+        public void asignUserToTerminal(AsignTerminalRequest requestParam)
+        {
+            if (requestParam.TerminalId != null && requestParam.UserId != null)
+            {
+
+            }
+            else
+            {
+                throw new AppExceptions("Terminal or User Not Found");
+            }
+        }
+
+
     }
 }
