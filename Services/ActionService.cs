@@ -27,7 +27,7 @@ namespace wscore.Services
         ActionReturn OpenDoorTCP(EventTCP action);
         ActionReturn Reboot(int terminalId, int userId);
         ActionReturn RebootTCP(int terminalId, int userId);
-        TerminalReturn Status(int terminalId, int userId);
+        TerminalReturn Status(int terminalId);
         List<TerminalReturn> Terminals(int userId);
         DepositReturn GetDeposit(int DepositId, int userId);
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
@@ -1021,7 +1021,7 @@ namespace wscore.Services
             return _listReturn;
         }
 
-        public TerminalReturn Status(int terminalId, int userId)
+        public TerminalReturn Status(int terminalId)
         {
             var _terminal = GetTerminal(terminalId);
             TerminalReturn _statusReturn = new TerminalReturn();
@@ -1047,8 +1047,9 @@ namespace wscore.Services
             //missing validation when terminal does not exist  shoudl trow and errror.
             else
             {
-                _statusReturn.TerminalId = terminalId;
-                _statusReturn.Status = TerminalStatus.Offline.ToString();
+                // _statusReturn.TerminalId = terminalId;
+                //  _statusReturn.Status = TerminalStatus.Offline.ToString();
+                throw new AppExceptions("Terminal Note not found");
             }
 
             return _statusReturn;
@@ -1673,14 +1674,31 @@ namespace wscore.Services
         {
             if (requestParam.TerminalId != null && requestParam.UserId != null)
             {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "";
 
+                    sql = "INSERT INTO UserTerminal (TerminalId, UserId) value ((SELECT * FROM(SELECT " + requestParam.UserId + ") as temp1 " +
+                        " WHERE EXISTS(SELECT * FROM User WHERE UserId = " + requestParam.UserId + ") LIMIT 1) , " +
+                        "(SELECT * FROM(SELECT " + requestParam.TerminalId + ") as temp2  WHERE EXISTS(SELECT* FROM Terminal WHERE TerminalId = " + requestParam.TerminalId + ") LIMIT 1)) ";
+
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    try
+                    {
+                        cmd.ExecuteNonQuery();                       
+                    }
+                    catch
+                    {
+                        throw new AppExceptions("User or Terminal does not exist");
+                    }
+                }
             }
             else
             {
                 throw new AppExceptions("Terminal or User Not Found");
             }
         }
-
 
     }
 }

@@ -18,6 +18,7 @@ namespace wscore.Controllers
     public class ActionController : Controller
     {
         private IActionService _actionService;
+        private ILoginService _loginService;
 
         protected int GetUserId()
         {
@@ -29,9 +30,10 @@ namespace wscore.Controllers
             return this.User.Claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).SingleOrDefault();
         }
 
-        public ActionController(IActionService actionService)
+        public ActionController(IActionService actionService, ILoginService loginService)
         {
             _actionService = actionService;
+            _loginService = loginService;
         }
 
         #region DemoVersion
@@ -313,7 +315,7 @@ namespace wscore.Controllers
         [HttpPost("getstatus")]
         public IActionResult TerminalStatus([FromBody]TerminalReturn statusParam)
         {
-            var _statusReturn = _actionService.Status(statusParam.TerminalId, GetUserId()); ;
+            var _statusReturn = _actionService.Status(statusParam.TerminalId); ;
             return Ok(_statusReturn);
         }
 
@@ -423,7 +425,7 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("asignUserToTerminal")]
-        public IActionResult AsignUserToTerminal(AsignTerminalRequest requestParam)
+        public IActionResult AsignUserToTerminal([FromBody]AsignTerminalRequest requestParam)
         {
             try
             {
@@ -431,8 +433,15 @@ namespace wscore.Controllers
                 {
                     throw new AppExceptions("Data invalid ");
                 }
-                _actionService.asignUserToTerminal(requestParam);
-                return Ok("User asigned to terminal");
+                if (requestParam.TerminalId != null && requestParam.UserId != null)
+                {
+                    _actionService.asignUserToTerminal(requestParam);
+                    return Ok("User asigned to terminal");
+                }
+                else
+                {
+                    throw new AppExceptions("Terminal or User Can not be empty");
+                }               
             }
             catch (Exception ex)
             {

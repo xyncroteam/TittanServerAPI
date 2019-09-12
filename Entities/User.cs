@@ -30,6 +30,10 @@ namespace wscore.Entities
         public string Description { get; set; }
         public int accessCode { get; set; }
     }
+    public class User_Request
+    {
+        public int? Id { get; set; }
+    }
 
     public class UserRequest
     {
