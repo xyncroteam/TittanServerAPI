@@ -156,7 +156,7 @@ namespace wscore.Entities
         public DateTime Date { get; set; }
         public string UserNameEvent { get; set; }
     }
-    public class AsignTerminalRequest
+    public class TerminalUserRequest
     {
         public int? TerminalId { get; set; }
         public int? UserId { get; set; }

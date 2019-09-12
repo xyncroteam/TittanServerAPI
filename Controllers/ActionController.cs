@@ -425,7 +425,7 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("asignUserToTerminal")]
-        public IActionResult AsignUserToTerminal([FromBody]AsignTerminalRequest requestParam)
+        public IActionResult AsignUserToTerminal([FromBody]TerminalUserRequest requestParam)
         {
             try
             {
@@ -448,6 +448,33 @@ namespace wscore.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("unasignUserToTerminal")]
+        public IActionResult UnasignUserFromTerminal([FromBody]TerminalUserRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                if (requestParam.TerminalId != null && requestParam.UserId != null)
+                {
+                    _actionService.unasignUserFromTerminal(requestParam);
+                    return Ok("User been unasign from terminal");
+                }
+                else
+                {
+                    throw new AppExceptions("Terminal or User Can not be empty");
+                }                    
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("getAllTerminalUsers")]
