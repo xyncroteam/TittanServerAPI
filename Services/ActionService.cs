@@ -1679,7 +1679,7 @@ namespace wscore.Services
                     conn.Open();
                     string sql = "";
 
-                    sql = "INSERT INTO UserTerminal (TerminalId, UserId) value ((SELECT * FROM(SELECT " + requestParam.UserId + ") as temp1 " +
+                    sql = "INSERT INTO UserTerminal (UserId , TerminalId) value ((SELECT * FROM(SELECT " + requestParam.UserId + ") as temp1 " +
                         " WHERE EXISTS(SELECT * FROM User WHERE UserId = " + requestParam.UserId + ") LIMIT 1) , " +
                         "(SELECT * FROM(SELECT " + requestParam.TerminalId + ") as temp2  WHERE EXISTS(SELECT* FROM Terminal WHERE TerminalId = " + requestParam.TerminalId + ") LIMIT 1)) ";
 
@@ -1688,9 +1688,21 @@ namespace wscore.Services
                     {
                         cmd.ExecuteNonQuery();                       
                     }
-                    catch
+                    catch (MySqlException ex)
                     {
-                        throw new AppExceptions("User or Terminal does not exist");
+                        if (ex.Number == 1062)
+                        {
+                            throw new AppExceptions("Duplicates can not be inserted");
+                        }
+                        else if (ex.Number == 1048)
+                        {
+                            throw new AppExceptions("Terminal or User does not exist");
+                        }
+                        else
+                        {
+                            throw new AppExceptions("Data could not be inserted");
+                        }
+                        
                     }
                 }
             }
