@@ -450,7 +450,7 @@ namespace wscore.Controllers
         }
 
         [Authorize(Roles = "Admin,User")]
-        [HttpPost("unasignUserToTerminal")]
+        [HttpPost("unasignUserFromTerminal")]
         public IActionResult UnasignUserFromTerminal([FromBody]TerminalUserRequest requestParam)
         {
             try
