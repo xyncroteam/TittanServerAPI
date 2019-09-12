@@ -441,7 +441,26 @@ namespace wscore.Controllers
                 else
                 {
                     throw new AppExceptions("Terminal or User Can not be empty");
-                }               
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("getAllTerminalUsers")]
+        public IActionResult GetAllTerminalUsers([FromBody]TerminalRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _usersReturn = _actionService.getAllTerminalUsers(requestParam.TerminalId);
+                return Ok(_usersReturn);
             }
             catch (Exception ex)
             {
@@ -544,7 +563,7 @@ namespace wscore.Controllers
         {
             try
             {
-                if(eventparam == null)
+                if (eventparam == null)
                 {
                     throw new AppExceptions("Data invalid ");
                 }

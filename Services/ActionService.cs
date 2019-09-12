@@ -48,6 +48,7 @@ namespace wscore.Services
         List<EventListReturn> getEventsByTerminal(EventRequest eventRequest);
         List<EventListReturn> getEventsByTerminal(int? TerminalId);
         void asignUserToTerminal(AsignTerminalRequest requestParam);
+        List<UserReturn> getAllTerminalUsers(int? terminalId);
     }
 
     public class ActionService : IActionService
@@ -1710,6 +1711,41 @@ namespace wscore.Services
             {
                 throw new AppExceptions("Terminal or User Not Found");
             }
+        }
+
+        public List<UserReturn> getAllTerminalUsers(int? terminalId)
+        {
+            List<UserReturn> _listUsers = new List<UserReturn>();
+            if(terminalId != null)
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("select ut.UserId, u.UserName, u.FirstName , u.LastName, u.Code , c.Name from UserTerminal ut join User u on u.UserId = ut.UserId" +
+                        " join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where TerminalId = " + terminalId.ToString(), conn);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            UserReturn _user = new UserReturn();
+                            _user.Id = int.Parse(reader["UserId"].ToString());
+                            _user.Username = reader["Username"].ToString();
+                            _user.FirstName = reader["FirstName"].ToString();
+                            _user.LastName = reader["LastName"].ToString();
+                            _user.Group = reader["Name"].ToString();
+                            _user.accessCode = Int32.Parse(reader["Code"].ToString());
+
+                            _listUsers.Add(_user);
+                        }
+                    }
+                }
+                return _listUsers;
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }           
         }
 
     }
