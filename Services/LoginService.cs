@@ -23,7 +23,7 @@ namespace wscore.Services
         User Authenticate(string username, string password);
         User AuthenticateDemo(string username, string password);
         List<UserReturn> Users();
-        UserReturn getUserById(UserReturn statusParam);
+        UserReturn getUserById(int? userId);
         List<Rols> Roles();
         Rols getRolById(Rols statusParam);
         Rols getRolByName(Rols statusParam);
@@ -404,13 +404,13 @@ namespace wscore.Services
             return __userListReturn;
         }
 
-        public UserReturn getUserById(UserReturn statusParam)
+        public UserReturn getUserById(int? userId)
         {
-            if (statusParam == null)
+            if (userId == null)
             {
                 throw new AppExceptions("User Id is required");
             }
-            var _user = GetUserById(statusParam.Id);
+            var _user = GetUserById(userId);
             UserReturn _getUserReturn = new UserReturn();
 
             if (_user != null)

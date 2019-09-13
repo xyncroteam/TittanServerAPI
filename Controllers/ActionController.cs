@@ -18,6 +18,7 @@ namespace wscore.Controllers
     public class ActionController : Controller
     {
         private IActionService _actionService;
+        private ILoginService _loginService;
 
         protected int GetUserId()
         {
@@ -29,9 +30,10 @@ namespace wscore.Controllers
             return this.User.Claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).SingleOrDefault();
         }
 
-        public ActionController(IActionService actionService)
+        public ActionController(IActionService actionService, ILoginService loginService)
         {
             _actionService = actionService;
+            _loginService = loginService;
         }
 
         #region DemoVersion
@@ -313,7 +315,7 @@ namespace wscore.Controllers
         [HttpPost("getstatus")]
         public IActionResult TerminalStatus([FromBody]TerminalReturn statusParam)
         {
-            var _statusReturn = _actionService.Status(statusParam.TerminalId, GetUserId()); ;
+            var _statusReturn = _actionService.Status(statusParam.TerminalId); ;
             return Ok(_statusReturn);
         }
 
@@ -421,6 +423,77 @@ namespace wscore.Controllers
             return Ok(_statusReturn);
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("asignUserToTerminal")]
+        public IActionResult AsignUserToTerminal([FromBody]TerminalUserRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                if (requestParam.TerminalId != null && requestParam.UserId != null)
+                {
+                    _actionService.asignUserToTerminal(requestParam);
+                    return Ok("User asigned to terminal");
+                }
+                else
+                {
+                    throw new AppExceptions("Terminal or User Can not be empty");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("unasignUserFromTerminal")]
+        public IActionResult UnasignUserFromTerminal([FromBody]TerminalUserRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                if (requestParam.TerminalId != null && requestParam.UserId != null)
+                {
+                    _actionService.unasignUserFromTerminal(requestParam);
+                    return Ok("User been unasign from terminal");
+                }
+                else
+                {
+                    throw new AppExceptions("Terminal or User Can not be empty");
+                }                    
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("getAllTerminalUsers")]
+        public IActionResult GetAllTerminalUsers([FromBody]TerminalRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _usersReturn = _actionService.getAllTerminalUsers(requestParam.TerminalId);
+                return Ok(_usersReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
 
@@ -517,7 +590,7 @@ namespace wscore.Controllers
         {
             try
             {
-                if(eventparam == null)
+                if (eventparam == null)
                 {
                     throw new AppExceptions("Data invalid ");
                 }

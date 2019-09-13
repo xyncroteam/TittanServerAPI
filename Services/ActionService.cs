@@ -27,7 +27,7 @@ namespace wscore.Services
         ActionReturn OpenDoorTCP(EventTCP action);
         ActionReturn Reboot(int terminalId, int userId);
         ActionReturn RebootTCP(int terminalId, int userId);
-        TerminalReturn Status(int terminalId, int userId);
+        TerminalReturn Status(int terminalId);
         List<TerminalReturn> Terminals(int userId);
         DepositReturn GetDeposit(int DepositId, int userId);
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
@@ -47,6 +47,9 @@ namespace wscore.Services
         CashBoxNotes GetCashBoxBills(CashBoxRequest cashBoxparam);
         List<EventListReturn> getEventsByTerminal(EventRequest eventRequest);
         List<EventListReturn> getEventsByTerminal(int? TerminalId);
+        void asignUserToTerminal(TerminalUserRequest requestParam);
+        List<UserReturn> getAllTerminalUsers(int? terminalId);
+        void unasignUserFromTerminal(TerminalUserRequest requestParam);
     }
 
     public class ActionService : IActionService
@@ -1033,7 +1036,7 @@ namespace wscore.Services
             return _listReturn;
         }
 
-        public TerminalReturn Status(int terminalId, int userId)
+        public TerminalReturn Status(int terminalId)
         {
             var _terminal = GetTerminal(terminalId);
             TerminalReturn _statusReturn = new TerminalReturn();
@@ -1059,8 +1062,9 @@ namespace wscore.Services
             //missing validation when terminal does not exist  shoudl trow and errror.
             else
             {
-                _statusReturn.TerminalId = terminalId;
-                _statusReturn.Status = TerminalStatus.Offline.ToString();
+                // _statusReturn.TerminalId = terminalId;
+                //  _statusReturn.Status = TerminalStatus.Offline.ToString();
+                throw new AppExceptions("Terminal Note not found");
             }
 
             return _statusReturn;
@@ -1231,7 +1235,9 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount, count(*) as terminalTotal from Terminal", conn);
+                //MySqlCommand cmd = new MySqlCommand("select sum(TotalAmount) as TotalAmount, count(*) as terminalTotal from Terminal", conn);
+                MySqlCommand cmd = new MySqlCommand("select count(Distinct terminalId) as terminalTotal, ((sum(Notes1000))*1000 + (sum(Notes500))*500 + (sum(Notes200))*200" +
+                    " + (sum(Notes100))*100 + (sum(Notes50))*50 + (sum(Notes20))*20 + (sum(Notes10))*10 + (sum(Notes5))*5 + (sum(Notes2))*2 + (sum(Notes1))*1 ) as TotalAmount from TerminalNotes ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -1622,7 +1628,7 @@ namespace wscore.Services
                 }
                 else if (Option == OpenDoorOption)
                 {
-                    sql += " and (E.EventTypeId = ' " + OpenDoorOption + " ' `) ";
+                    sql += " and (E.EventTypeId = ' " + OpenDoorOption + " ' ) ";
                 }
                 else if (Option == ClosedDoorOption)
                 {
@@ -1649,7 +1655,7 @@ namespace wscore.Services
             }
             return _listEvents;
         }
-        private List<EventListReturn> ListEvents( int? TerminalId)
+        private List<EventListReturn> ListEvents(int? TerminalId)
         {
             List<EventListReturn> _listEvents = new List<EventListReturn>();
             int limit = 5;
@@ -1679,6 +1685,94 @@ namespace wscore.Services
             return _listEvents;
         }
 
-      
+        public void asignUserToTerminal(TerminalUserRequest requestParam)
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "INSERT INTO UserTerminal (UserId , TerminalId) value ((SELECT * FROM(SELECT " + requestParam.UserId + ") as temp1 " +
+                    " WHERE EXISTS(SELECT * FROM User WHERE UserId = " + requestParam.UserId + ") LIMIT 1) , " +
+                    "(SELECT * FROM(SELECT " + requestParam.TerminalId + ") as temp2  WHERE EXISTS(SELECT* FROM Terminal WHERE TerminalId = " + requestParam.TerminalId + ") LIMIT 1)) ";
+
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                }
+                catch (MySqlException ex)
+                {
+                    if (ex.Number == 1062)
+                    {
+                        throw new AppExceptions("Duplicates can not be inserted");
+                    }
+                    else if (ex.Number == 1048)
+                    {
+                        throw new AppExceptions("Terminal or User does not exist");
+                    }
+                    else
+                    {
+                        throw new AppExceptions("Data could not be inserted");
+                    }
+
+                }
+            }
+        }
+
+        public void unasignUserFromTerminal(TerminalUserRequest requestParam)
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "Delete from UserTerminal where UserId = " + requestParam.UserId + " and TerminalId = " + requestParam.TerminalId + " ";
+
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                int rowsAffected = cmd.ExecuteNonQuery();
+
+                if (rowsAffected == 0)
+                {
+                    throw new AppExceptions("User or Terminal not found");
+                }
+            }
+        }
+
+        public List<UserReturn> getAllTerminalUsers(int? terminalId)
+        {
+            List<UserReturn> _listUsers = new List<UserReturn>();
+            if (terminalId != null)
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("select ut.UserId, u.UserName, u.FirstName , u.LastName, u.Code , c.Name from UserTerminal ut join User u on u.UserId = ut.UserId" +
+                        " join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where TerminalId = " + terminalId.ToString(), conn);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            UserReturn _user = new UserReturn();
+                            _user.Id = int.Parse(reader["UserId"].ToString());
+                            _user.Username = reader["Username"].ToString();
+                            _user.FirstName = reader["FirstName"].ToString();
+                            _user.LastName = reader["LastName"].ToString();
+                            _user.Group = reader["Name"].ToString();
+                            _user.accessCode = Int32.Parse(reader["Code"].ToString());
+
+                            _listUsers.Add(_user);
+                        }
+                    }
+                }
+                return _listUsers;
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }
+        }
+
     }
 }

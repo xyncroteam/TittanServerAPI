@@ -73,11 +73,15 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin, User")]
         [HttpPost("getUser")]
-        public IActionResult GetUser([FromBody]UserReturn statusParam)
+        public IActionResult GetUser([FromBody]User_Request statusParam)
         {
             try
             {
-                var _userReturn = _loginService.getUserById(statusParam);
+                if (statusParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _userReturn = _loginService.getUserById(statusParam.Id);
                 return Ok(_userReturn);
             }
             catch (Exception ex)
