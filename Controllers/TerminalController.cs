@@ -72,6 +72,30 @@ namespace wscore.Controllers
                 return Ok("error");
         }
 
+        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        [AllowAnonymous]
+        [HttpPost("cashboxfromterminal")]
+        public IActionResult CashBoxFromTerminal([FromBody]List<CashBox> lBox)
+        {
+            bool ok = _terminalService.CashBoxFromTerminal(lBox);
+            if (ok)
+                return Ok("ok");
+            else
+                return Ok("error");
+        }
+
+        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        [AllowAnonymous]
+        [HttpPost("withdrawfromterminal")]
+        public IActionResult WithdrawFromTerminal([FromBody]CashBox box)
+        {
+            bool ok = _terminalService.WithdrawFromTerminal(box);
+            if (ok)
+                return Ok("ok");
+            else
+                return Ok("error");
+        }
+
     }
     
 }

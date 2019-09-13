@@ -19,6 +19,8 @@ namespace wscore.Services
         void DepositTerminal(string deposit);
         void EventTerminal(int terminalId, int eventId);
         bool DepositFromTerminal(DepositFromTerminal deposit);
+        bool WithdrawFromTerminal(CashBox box);
+        bool CashBoxFromTerminal(List<CashBox> lBox);
     }
 
     public class TerminalService : ITerminalService
@@ -210,6 +212,55 @@ namespace wscore.Services
 
         #region Deposit
 
+        private void WithdrawInsert(CashBox box)
+        {
+            string strCol = "";
+            string strVal = "";
+            foreach (var n in box.Notes)
+            {
+                strCol += ",Notes" + n.NoteId;
+
+                strVal += "," + n.Count;
+            }
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("insert into Withdraw (TerminalId,CashBoxNumber,Date,UserId" + strCol + ") values (" + box.TerminalId + "," + box.Id + ", NOW()," + box.UserId + strVal + ");", conn);
+                cmd.ExecuteNonQuery();
+            }
+            
+        }
+
+        private void CashBoxupdate(CashBox box)
+        {
+            
+            using (MySqlConnection conn = GetConnection())
+            {
+                string strSet = "";
+                
+                foreach (var n in box.Notes)
+                {
+                    if(strSet == "")
+                        strSet += "Notes" + n.NoteId + " = " + n.Count;
+                    else
+                        strSet += " , Notes" + n.NoteId + " = " + n.Count;
+                }
+
+                string strQ = "UPDATE TerminalNotes SET Notes1000=0,Notes500=0,Notes200=0,Notes100=0,Notes50=0,Notes20=0,Notes10=0,Notes5=0,Notes2=0,Notes1=0 where TerminalId = " + box.TerminalId + " and CashBoxNumber = " + box.Id + ";"; 
+
+                if (strSet != "")
+                {
+                    strQ += "UPDATE TerminalNotes SET " + strSet + " where TerminalId = " + box.TerminalId + " and CashBoxNumber = " + box.Id + "; ";
+                }
+
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand(strQ, conn);
+                cmd.ExecuteNonQuery();
+            }
+
+            
+        }
+
         private Deposit DepositUpdate(Deposit deposit)
         {
             var _deposit = deposit;
@@ -304,6 +355,25 @@ namespace wscore.Services
 
         #endregion
 
+        public bool CashBoxFromTerminal(List<CashBox> lBox)
+        {
+            bool ok = true;
+
+            try
+            {
+                foreach (var box in lBox)
+                {
+                    CashBoxupdate(box);
+                }
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            return ok;
+        }
+
         public bool DepositFromTerminal(DepositFromTerminal deposit)
         {
             bool ok = true;
@@ -312,6 +382,22 @@ namespace wscore.Services
             {
                 deposit = DepositInsert(deposit);
                 DepositNotesInsert(deposit);
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            return ok;
+        }
+
+        public bool WithdrawFromTerminal(CashBox box)
+        {
+            bool ok = true;
+
+            try
+            {
+                WithdrawInsert(box);
             }
             catch
             {
