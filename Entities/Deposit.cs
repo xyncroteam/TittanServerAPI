@@ -16,6 +16,7 @@ namespace wscore.Entities
         public List<Note> Notes { get; set; }
         public string Date { get; set; }
         public int UserId { get; set; }
+        public int EventId { get; set; }
     }
 
     public class Deposit
@@ -42,7 +43,7 @@ namespace wscore.Entities
         public string Amount { get; set; }
         public List<Note> Notes { get; set; }
         public string Date { get; set; }
-      
+        public int EventId { get; set; }
     }
 
     public enum DepositStatus

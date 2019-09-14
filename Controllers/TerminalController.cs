@@ -62,6 +62,18 @@ namespace wscore.Controllers
 
         //[ServiceFilter(typeof(ClientIdCheckFilter))]
         [AllowAnonymous]
+        [HttpPost("eventfromterminal")]
+        public IActionResult EventFromTerminal([FromBody]Event eventParam)
+        {
+            if (eventParam != null)
+            {
+                _terminalService.EventFromTerminal(eventParam);
+            }
+            return Ok();
+        }
+
+        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        [AllowAnonymous]
         [HttpPost("depositfromterminal")]
         public IActionResult DepositFromTerminal([FromBody]DepositFromTerminal deposit)
         {
