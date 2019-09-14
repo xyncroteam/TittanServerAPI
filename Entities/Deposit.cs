@@ -44,7 +44,7 @@ namespace wscore.Entities
         Error
     }
 
-    public class DepositRequest
+    public class ReportRequest
     {
         [Required]
         [DataType(DataType.Date)]

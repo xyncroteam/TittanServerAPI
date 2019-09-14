@@ -363,7 +363,7 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("deposits")]
-        public IActionResult GetDetposits([FromBody]DepositRequest depositParam)
+        public IActionResult GetDetposits([FromBody]ReportRequest depositParam)
         {
             try
             {
@@ -488,6 +488,25 @@ namespace wscore.Controllers
                 }
                 var _usersReturn = _actionService.getAllTerminalUsers(requestParam.TerminalId);
                 return Ok(_usersReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("withdraw")]
+        public IActionResult GetWithdraws([FromBody]ReportRequest withdrawParam)
+        {
+            try
+            {
+                if (withdrawParam == null)
+                {
+                    throw new AppExceptions("Date invalid ");
+                }
+                var _statusReturn = _actionService.getWidthraws(withdrawParam);
+                return Ok(_statusReturn);
             }
             catch (Exception ex)
             {

@@ -104,6 +104,16 @@ namespace wscore.Entities
         public string UserNameDeposit { get; set; }
     }
 
+    public class WithdrawListReturn
+    {
+        public string TerminalName { get; set; }
+        public string TerminalAddress { get; set; }
+        public int CashBoxNumber { get; set; }
+        public int Amount { get; set; }
+        public DateTime Date { get; set; }
+        public string UserNameWithdraw { get; set; }
+    }
+
     public class TerminalCapacityBills
     {
         public int TerminalId { get; set; }

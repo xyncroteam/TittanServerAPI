@@ -38,7 +38,8 @@ namespace wscore.Services
         List<TerminalsList> getAllOfflineTerminals();
         TerminalsCapacity getTerminalsCapacity();
         List<TerminalsList> getAllTerminalsPercentage();
-        List<DepositListReturn> getDeposits(DepositRequest depositParam);
+        List<DepositListReturn> getDeposits(ReportRequest depositParam);
+        List<WithdrawListReturn> getWidthraws(ReportRequest withdrawParam);
         Notes DepositNotes(int? depositId);
         List<TerminalIdsReturn> GetTerminalsIds();
         TerminalCapacityBills GetTerminalCapacityBills(int? TerminalId);
@@ -50,6 +51,7 @@ namespace wscore.Services
         void asignUserToTerminal(TerminalUserRequest requestParam);
         List<UserReturn> getAllTerminalUsers(int? terminalId);
         void unasignUserFromTerminal(TerminalUserRequest requestParam);
+
     }
 
     public class ActionService : IActionService
@@ -1357,7 +1359,7 @@ namespace wscore.Services
             return percetageTerminals;
         }
         //functions takes as parameters start, end date and terminal id
-        public List<DepositListReturn> getDeposits(DepositRequest depositParam)
+        public List<DepositListReturn> getDeposits(ReportRequest depositParam)
         {
             if (string.IsNullOrWhiteSpace(depositParam.StartDate.ToString()) || string.IsNullOrWhiteSpace(depositParam.EndDate.ToString()))
             {
@@ -1383,16 +1385,16 @@ namespace wscore.Services
                 DateTime end = DateTime.Now.AddDays(+1);
                 string endDate = end.ToString("yyyy-MM-dd 00:00:00"); //today's date is the ending
 
-                var _endDate = "2019-01-26 00:00:00"; //needs to be changed
+               // var _endDate = "2019-01-26 00:00:00"; //needs to be changed
 
                 //  DateTime _endDate = DateTime.Parse(depositParam.EndDate.ToString());
                 DateTime _startDate = end.AddDays(-5);
                 string startDate = _startDate.ToString("yyyy-MM-dd 00:00:00");
 
-                var _startdate = "2019-01-22 00:00:00"; //needs to be changed
+               // var _startdate = "2019-01-22 00:00:00"; //needs to be changed
 
-                _deposits = ListDailyDeposits(_startdate, _endDate, TerminalId);
-                //_deposits = ListDailyDeposits(startDate, endDate, TerminalId);
+              //  _deposits = ListDailyDeposits(_startdate, _endDate, TerminalId);
+                _deposits = ListDailyDeposits(startDate, endDate, TerminalId);
             }
             else
             {
@@ -1760,6 +1762,64 @@ namespace wscore.Services
                 throw new AppExceptions("Terminal not found");
             }
         }
+
+        //functions takes as parameters start, end date and terminal id
+        public List<WithdrawListReturn> getWidthraws(ReportRequest withdrawParam)
+        {
+            if (string.IsNullOrWhiteSpace(withdrawParam.StartDate.ToString()) || string.IsNullOrWhiteSpace(withdrawParam.EndDate.ToString()))
+            {
+                throw new AppExceptions("Date can not be empty");
+            }
+            string startDate = withdrawParam.StartDate.Value.ToString("yyyy-MM-dd 00:00:00");
+
+            DateTime _endDate = DateTime.Parse(withdrawParam.EndDate.ToString());
+            _endDate = _endDate.AddDays(+1);
+            string endDate = _endDate.ToString("yyyy-MM-dd 00:00:00");
+
+            var _withdraw = ListWithdraw(startDate, endDate, withdrawParam.TerminalId);
+
+            return _withdraw;
+        }
+
+        private List<WithdrawListReturn> ListWithdraw(string startDate, string endDate, int? TerminalId)
+        {
+            List<WithdrawListReturn> _listWithdraw = new List<WithdrawListReturn>();
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string sql = "";
+
+                sql = "select t.Name, t.Address, u.FirstName , u.LastName, Date , w.CashboxNumber ," +
+                    " ((Notes1000 * 1000) + (Notes500 * 500) + (Notes200 * 200) + (Notes100 * 100) + (Notes50 * 50) + (Notes20 * 20) + (Notes10 * 10) + (Notes5 * 5) + (Notes2 * 2) + (Notes1 * 1)) " +
+                    "as totalWithdraw from Withdraw w inner join Terminal t on w.TerminalId = t.TerminalId inner join User u on w.UserId = u.UserId " +
+                    " where w.Date >= '" + startDate + "' and w.Date <= '" + endDate + "' ";
+
+                if (TerminalId != null)
+                {
+                    sql += " and w.TerminalId = " + TerminalId + " ";
+                }
+
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        WithdrawListReturn _withdraw = new WithdrawListReturn();
+                        _withdraw.TerminalName = reader["Name"].ToString();
+                        _withdraw.TerminalAddress = reader["Address"].ToString();
+                        _withdraw.Amount = int.Parse(reader["totalWithdraw"].ToString());
+                        _withdraw.CashBoxNumber = int.Parse(reader["CashBoxNumber"].ToString());
+                        _withdraw.Date = DateTime.Parse(reader["Date"].ToString());
+                        _withdraw.UserNameWithdraw = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _listWithdraw.Add(_withdraw);
+                    }
+                }
+            }
+            return _listWithdraw;
+        }
+
 
     }
 }
