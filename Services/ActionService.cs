@@ -34,7 +34,7 @@ namespace wscore.Services
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
         void UpdateTerminal(UpdateTerminalReturn updateTerminal);
         TotalAmount getAllTerminalsTotalAmount();
-        TotalAmount getAllTotalDeposit();
+        List<TotalAmount> getAllTotalDeposit();
         List<TerminalsList> getAllOfflineTerminals();
         TerminalsCapacity getTerminalsCapacity();
         List<TerminalsList> getAllTerminalsPercentage();
@@ -1240,42 +1240,48 @@ namespace wscore.Services
             return totalAmount;
         }
 
-        public TotalAmount getAllTotalDeposit()
+        public List<TotalAmount> getAllTotalDeposit()
         {
-            TotalAmount totalAmount = new TotalAmount();
+            List<TotalAmount> totalAmountList = new List<TotalAmount>();
 
             //need to changed later for the actual date
-            DateTime startnows1 = DateTime.Now;
-            DateTime enddate1 = DateTime.Now.AddDays(+1);
-            var _start = startnows1.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
-            var _end = enddate1.ToString("yyyy-MM-dd 00:00:00");
+            DateTime startnows = DateTime.Now.AddDays(-6);
+            DateTime enddate = DateTime.Now.AddDays(+1);
+
+            var _start = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
+            var _end = enddate.ToString("yyyy-MM-dd 00:00:00");
 
 
-            DateTime startnows = DateTime.Now.AddDays(-21);
-            DateTime enddate = DateTime.Now.AddDays(-20);
+         //   DateTime startnows = DateTime.Now.AddDays(-21);
+        //    DateTime enddate = DateTime.Now.AddDays(-20);
 
-            var _start2 = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
-            var _end2 = enddate.ToString("yyyy-MM-dd 00:00:00");
+        //    var _start2 = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
+         //   var _end2 = enddate.ToString("yyyy-MM-dd 00:00:00");
 
-            var startnow = "2019-07-30 00:00:00"; //"8/20/2019 00:00:00"
-            var enddate2 = "2019-07-31 00:00:00";
+          //  var startnow = "2019-07-30 00:00:00"; //"8/20/2019 00:00:00"
+          //  var enddate2 = "2019-07-31 00:00:00";
+
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
                 //MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '"+ startnow.AddDays(+1) + "' group by convert(D.DateEnd, date) ", conn);
                 MySqlCommand cmd = new MySqlCommand("select sum(D.Amount) as TotalDeposit, convert(D.DateEnd, date)  as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal " +
-                                                    "from Deposit D where D.DateEnd >= '" + startnow + "' and  D.DateEnd <= '" + enddate2 + "' group by convert(D.DateEnd, date) ", conn);
+                                                    "from Deposit D where D.DateEnd >= '" + _start + "' and  D.DateEnd <= '" + _end + "' group by convert(D.DateEnd, date) ", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        totalAmount.TotalDeposit = double.Parse(reader["TotalDeposit"].ToString());
-                        totalAmount.totalTerminals = int.Parse(reader["totalterminal"].ToString());
+                        TotalAmount total = new TotalAmount();
+                        total.TotalDeposit = double.Parse(reader["TotalDeposit"].ToString());
+                        total.totalTerminals = int.Parse(reader["totalterminal"].ToString());
+                        total.Date = DateTime.Parse(reader["_date"].ToString());
+
+                        totalAmountList.Add(total);
                     }
                 }
             }
-            return totalAmount;
+            return totalAmountList;
         }
 
         public List<TerminalsList> getAllOfflineTerminals()
