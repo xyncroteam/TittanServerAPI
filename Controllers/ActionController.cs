@@ -535,6 +535,14 @@ namespace wscore.Controllers
         }
 
         [Authorize(Roles = "Admin,User")]
+        [HttpPost("totalWithdraw")]
+        public IActionResult GetAllTotalWidthraws()
+        {
+            var _totalTerminalsWithdrawAmountReturn = _actionService.getAllTotalWithdraw();
+            return Ok(_totalTerminalsWithdrawAmountReturn);
+        }
+
+        [Authorize(Roles = "Admin,User")]
         [HttpPost("offlineterminals")]
         public IActionResult GetAllOfflineTerminals()
         {

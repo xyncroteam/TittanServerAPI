@@ -35,6 +35,7 @@ namespace wscore.Services
         void UpdateTerminal(UpdateTerminalReturn updateTerminal);
         TotalAmount getAllTerminalsTotalAmount();
         List<TotalAmount> getAllTotalDeposit();
+        List<TotalAmount> getAllTotalWithdraw();
         List<TerminalsList> getAllOfflineTerminals();
         TerminalsCapacity getTerminalsCapacity();
         List<TerminalsList> getAllTerminalsPercentage();
@@ -1243,23 +1244,12 @@ namespace wscore.Services
         public List<TotalAmount> getAllTotalDeposit()
         {
             List<TotalAmount> totalAmountList = new List<TotalAmount>();
-
-            //need to changed later for the actual date
+            
             DateTime startnows = DateTime.Now.AddDays(-6);
             DateTime enddate = DateTime.Now.AddDays(+1);
 
             var _start = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
             var _end = enddate.ToString("yyyy-MM-dd 00:00:00");
-
-
-         //   DateTime startnows = DateTime.Now.AddDays(-21);
-        //    DateTime enddate = DateTime.Now.AddDays(-20);
-
-        //    var _start2 = startnows.ToString("yyyy-MM-dd 00:00:00"); //2019-08-20 00:00:00
-         //   var _end2 = enddate.ToString("yyyy-MM-dd 00:00:00");
-
-          //  var startnow = "2019-07-30 00:00:00"; //"8/20/2019 00:00:00"
-          //  var enddate2 = "2019-07-31 00:00:00";
 
             using (MySqlConnection conn = GetConnection())
             {
@@ -1273,7 +1263,7 @@ namespace wscore.Services
                     while (reader.Read())
                     {
                         TotalAmount total = new TotalAmount();
-                        total.TotalDeposit = double.Parse(reader["TotalDeposit"].ToString());
+                        total.Totalamount = double.Parse(reader["TotalDeposit"].ToString());
                         total.totalTerminals = int.Parse(reader["totalterminal"].ToString());
                         total.Date = DateTime.Parse(reader["_date"].ToString());
 
@@ -1283,6 +1273,40 @@ namespace wscore.Services
             }
             return totalAmountList;
         }
+
+        public List<TotalAmount> getAllTotalWithdraw()
+        {
+            List<TotalAmount> totalAmountList = new List<TotalAmount>();
+
+            DateTime startnows = DateTime.Now.AddDays(-6);
+            DateTime enddate = DateTime.Now.AddDays(+1);
+
+            var _start = startnows.ToString("yyyy-MM-dd 00:00:00");
+            var _end = enddate.ToString("yyyy-MM-dd 00:00:00");
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select ((sum(Notes1000))*1000 + (sum(Notes500))*500  + (sum(Notes200))*200 + (sum(Notes100))*100 + (sum(Notes50))*50 + (sum(Notes20))*20 +" +
+                    " (sum(Notes10))*10 + (sum(Notes5))*5 + (sum(Notes2))*2 + (sum(Notes1))*1 ) as TotalWithdraw, convert(W.Date, date) as _date, (SELECT COUNT(*) FROM Terminal) as totalterminal " +
+                    " from Withdraw W where W.Date >= '" + _start + "' and W.Date <= '" + _end + "' group by convert(W.Date, date); ", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        TotalAmount total = new TotalAmount();
+                        total.Totalamount = double.Parse(reader["TotalWithdraw"].ToString());
+                        total.totalTerminals = int.Parse(reader["totalterminal"].ToString());
+                        total.Date = DateTime.Parse(reader["_date"].ToString());
+
+                        totalAmountList.Add(total);
+                    }
+                }
+            }
+            return totalAmountList;
+        }
+
 
         public List<TerminalsList> getAllOfflineTerminals()
         {
