@@ -60,6 +60,11 @@ namespace wscore.Entities
         public int? DepositId { get; set; }
     }
 
+    public class WithdrawNotesRquest
+    {
+        public int? EventId { get; set; }
+    }
+
    
     public class Note
     {

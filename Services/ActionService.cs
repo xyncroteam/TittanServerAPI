@@ -42,6 +42,7 @@ namespace wscore.Services
         List<DepositListReturn> getDeposits(ReportRequest depositParam);
         List<WithdrawListReturn> getWidthraws(ReportRequest withdrawParam);
         Notes DepositNotes(int? depositId);
+        Notes WithdrawNotes(int? eventId);
         List<TerminalIdsReturn> GetTerminalsIds();
         TerminalCapacityBills GetTerminalCapacityBills(int? TerminalId);
         List<DailyDepositReturn> getDepositsByTerminal(int? TerminalId);
@@ -185,6 +186,36 @@ namespace wscore.Services
             {
                 conn.Open();
                 MySqlCommand cmd = new MySqlCommand("select * from DepositNotes where DepositId=" + depositId.ToString(), conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _notes = new Notes();
+                        _notes.Note1 = int.Parse(reader["Notes1"].ToString());
+                        _notes.Note2 = int.Parse(reader["Notes2"].ToString());
+                        _notes.Note5 = int.Parse(reader["Notes5"].ToString());
+                        _notes.Note10 = int.Parse(reader["Notes10"].ToString());
+                        _notes.Note20 = int.Parse(reader["Notes20"].ToString());
+                        _notes.Note50 = int.Parse(reader["Notes50"].ToString());
+                        _notes.Note100 = int.Parse(reader["Notes100"].ToString());
+                        _notes.Note200 = int.Parse(reader["Notes200"].ToString());
+                        _notes.Note500 = int.Parse(reader["Notes500"].ToString());
+                        _notes.Note1000 = int.Parse(reader["Notes1000"].ToString());
+                    }
+                }
+            }
+            return _notes;
+        }
+
+        private Notes GetWithdrawNotes(int eventId)
+        {
+            Notes _notes = null; ;
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select EventId, Notes1000, Notes500, Notes200, Notes100, Notes50, Notes20, Notes10, Notes5, Notes2 , Notes1 from Withdraw where EventId = " + eventId.ToString(), conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -1514,6 +1545,20 @@ namespace wscore.Services
             return _depositnotes;
         }
 
+        public Notes WithdrawNotes(int? eventId)
+        {
+            Notes _withdrawnotes = null;
+            if (eventId != null)
+            {
+                _withdrawnotes = GetWithdrawNotes(eventId.Value);
+            }
+            else
+            {
+                throw new AppExceptions("Withdraw Note not found");
+            }
+            return _withdrawnotes;
+        }
+
         //function for the dropdowns for the reports, deposits and withdraw
         public List<TerminalIdsReturn> GetTerminalsIds()
         {
@@ -1820,7 +1865,7 @@ namespace wscore.Services
                 conn.Open();
                 string sql = "";
 
-                sql = "select t.Name, t.Address, u.FirstName , u.LastName, Date , w.CashboxNumber ," +
+                sql = "select t.Name, t.Address, u.FirstName , u.LastName, Date , w.CashboxNumber , EventId,  " +
                     " ((Notes1000 * 1000) + (Notes500 * 500) + (Notes200 * 200) + (Notes100 * 100) + (Notes50 * 50) + (Notes20 * 20) + (Notes10 * 10) + (Notes5 * 5) + (Notes2 * 2) + (Notes1 * 1)) " +
                     "as totalWithdraw from Withdraw w inner join Terminal t on w.TerminalId = t.TerminalId inner join User u on w.UserId = u.UserId " +
                     " where w.Date >= '" + startDate + "' and w.Date <= '" + endDate + "' ";
@@ -1843,6 +1888,7 @@ namespace wscore.Services
                         _withdraw.CashBoxNumber = int.Parse(reader["CashBoxNumber"].ToString());
                         _withdraw.Date = DateTime.Parse(reader["Date"].ToString());
                         _withdraw.UserNameWithdraw = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                        _withdraw.EventId = int.Parse(reader["EventId"].ToString());
                         _listWithdraw.Add(_withdraw);
                     }
                 }

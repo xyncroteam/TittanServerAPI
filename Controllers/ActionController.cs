@@ -405,8 +405,32 @@ namespace wscore.Controllers
         {
             try
             {
+                if (depositParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
                 var _depositReturn = _actionService.DepositNotes(depositParam.DepositId);
                 return Ok(_depositReturn);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("withdrawNotes")]
+        public IActionResult GetWithdrawNotes([FromBody]WithdrawNotesRquest withdrawParam)
+        {
+            try
+            {
+                if (withdrawParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _withdrawReturn = _actionService.WithdrawNotes(withdrawParam.EventId);
+                return Ok(_withdrawReturn);
 
             }
             catch (Exception ex)

@@ -113,6 +113,7 @@ namespace wscore.Entities
         public int Amount { get; set; }
         public DateTime Date { get; set; }
         public string UserNameWithdraw { get; set; }
+        public int EventId { get; set; }
     }
 
     public class TerminalCapacityBills
