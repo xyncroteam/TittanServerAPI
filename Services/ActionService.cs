@@ -1403,7 +1403,7 @@ namespace wscore.Services
                 MySqlCommand cmd = new MySqlCommand("select Name, Address, percentageTerminal from (select Name, Address, ((currentNotes * 100) / totalCashBox) as percentageTerminal " +
                                                     "from(select T.Name, T.Address, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1) as currentNotes," +
                                                     "sum(CashBoxCapacity) as totalCashBox from TerminalNotes N inner join Terminal T on T.TerminalId = N.TerminalId group by N.TerminalId) as total) as grandtotal" +
-                                                    " where percentageTerminal > '" + percentageTerminal + "'", conn);
+                                                    " where percentageTerminal >= '" + percentageTerminal + "'", conn);
 
                 using (var reader = cmd.ExecuteReader())
                 {
