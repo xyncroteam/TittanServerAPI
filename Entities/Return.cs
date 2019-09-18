@@ -173,5 +173,8 @@ namespace wscore.Entities
         public int? TerminalId { get; set; }
         public int? UserId { get; set; }
     }
-
+    public class TerminalStatusReturn
+    {
+        public string Status { get; set; }
+    }
 }

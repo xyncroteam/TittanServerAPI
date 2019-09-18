@@ -527,7 +527,7 @@ namespace wscore.Controllers
             {
                 if (withdrawParam == null)
                 {
-                    throw new AppExceptions("Date invalid ");
+                    throw new AppExceptions("Data invalid ");
                 }
                 var _statusReturn = _actionService.getWidthraws(withdrawParam);
                 return Ok(_statusReturn);
@@ -538,6 +538,24 @@ namespace wscore.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminalOnline")]
+        public IActionResult IsTerminalOnline([FromBody]TerminalRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _statusReturn = _actionService.isTerminalOnline(requestParam.TerminalId);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
         #region DashBoard functions

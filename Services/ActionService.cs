@@ -53,6 +53,7 @@ namespace wscore.Services
         void asignUserToTerminal(TerminalUserRequest requestParam);
         List<UserReturn> getAllTerminalUsers(int? terminalId);
         void unasignUserFromTerminal(TerminalUserRequest requestParam);
+        TerminalStatusReturn isTerminalOnline(int? TerminalId);
 
     }
 
@@ -1895,6 +1896,33 @@ namespace wscore.Services
             }
             return _listWithdraw;
         }
+
+        public TerminalStatusReturn isTerminalOnline(int? TerminalId)
+        {
+            TerminalStatusReturn terminalstatus = new TerminalStatusReturn();
+              
+            if (TerminalId != null)
+            {
+                Terminal _terminal = GetTerminal(TerminalId.Value);
+
+                var status = IsOnline(_terminal.IP);
+
+                if (status)
+                {
+                    terminalstatus.Status = "Online";
+                }
+                else
+                {
+                    terminalstatus.Status = "Offline";
+                }
+            }
+            else
+            {
+                throw new AppExceptions("Terminal not found");
+            }
+            return terminalstatus;
+        }
+
 
 
     }
