@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace wscore.Entities
 {
     public class Terminal
@@ -16,6 +18,8 @@ namespace wscore.Entities
         public TerminalStatus Status { get; set; }
         public string ContactName { get; set; }
         public string ContactPhone { get; set; }
+        public DateTime LastComunication { get; set; }
+        public double percentageTerminal { get; set; }
     }
 
     public enum TerminalStatus

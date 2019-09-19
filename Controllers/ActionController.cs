@@ -323,7 +323,7 @@ namespace wscore.Controllers
         [HttpPost("listTerminals")]
         public IActionResult ListTerminals()
         {
-            var _statusReturn = _actionService.Terminals(GetUserId()); ;
+            var _statusReturn = _actionService.Terminals(); ;
             return Ok(_statusReturn);
         }
 
@@ -363,7 +363,7 @@ namespace wscore.Controllers
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("deposits")]
-        public IActionResult GetDetposits([FromBody]DepositRequest depositParam)
+        public IActionResult GetDetposits([FromBody]ReportRequest depositParam)
         {
             try
             {
@@ -405,8 +405,32 @@ namespace wscore.Controllers
         {
             try
             {
+                if (depositParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
                 var _depositReturn = _actionService.DepositNotes(depositParam.DepositId);
                 return Ok(_depositReturn);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("withdrawNotes")]
+        public IActionResult GetWithdrawNotes([FromBody]WithdrawNotesRquest withdrawParam)
+        {
+            try
+            {
+                if (withdrawParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _withdrawReturn = _actionService.WithdrawNotes(withdrawParam.EventId);
+                return Ok(_withdrawReturn);
 
             }
             catch (Exception ex)
@@ -495,6 +519,43 @@ namespace wscore.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("withdraw")]
+        public IActionResult GetWithdraws([FromBody]ReportRequest withdrawParam)
+        {
+            try
+            {
+                if (withdrawParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _statusReturn = _actionService.getWidthraws(withdrawParam);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("terminalOnline")]
+        public IActionResult IsTerminalOnline([FromBody]TerminalRequest requestParam)
+        {
+            try
+            {
+                if (requestParam == null)
+                {
+                    throw new AppExceptions("Data invalid ");
+                }
+                var _statusReturn = _actionService.isTerminalOnline(requestParam.TerminalId);
+                return Ok(_statusReturn);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
         #region DashBoard functions
@@ -513,6 +574,14 @@ namespace wscore.Controllers
         {
             var _allTotalTerminaslAmountReturn = _actionService.getAllTotalDeposit();
             return Ok(_allTotalTerminaslAmountReturn);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("totalWithdraw")]
+        public IActionResult GetAllTotalWidthraws()
+        {
+            var _totalTerminalsWithdrawAmountReturn = _actionService.getAllTotalWithdraw();
+            return Ok(_totalTerminalsWithdrawAmountReturn);
         }
 
         [Authorize(Roles = "Admin,User")]

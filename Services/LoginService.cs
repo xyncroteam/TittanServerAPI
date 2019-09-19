@@ -212,7 +212,7 @@ namespace wscore.Services
             return user;
         }
 
-        private User GetUserByUsername(string userName)
+        private bool GetUserByUsername(string userName)
         {
             User user = null;
 
@@ -230,10 +230,14 @@ namespace wscore.Services
                     }
                 }
             }
-            return user;
+            if (user != null)
+            {
+                return true;
+            }
+            return false;
         }
 
-        private User GetUserByEmail(string email)
+        private bool GetUserByEmail(string email)
         {
             User user = null;
 
@@ -251,7 +255,11 @@ namespace wscore.Services
                     }
                 }
             }
-            return user;
+            if (user != null)
+            {
+                return true;
+            }
+            return false;
         }
         #region Roles
         private List<Rols> ListRoles()
@@ -536,12 +544,34 @@ namespace wscore.Services
                 {
                     throw new AppExceptions("User not found");
                 }
-                Unique userUnique = isUserExist(statusParam.Username, statusParam.Email);
+
+                bool usernameExist = false;
+                bool emailExist = false;
+
+              //  Unique userUnique = isUserExist(statusParam.Username, statusParam.Email);
+
+                if (_updateUser.Username != user.Username)
+                {
+                    usernameExist = GetUserByUsername(statusParam.Username); 
+                }
+                if (_updateUser.Email != user.Email)
+                {
+                    emailExist = GetUserByEmail(statusParam.Email); 
+                }
+                if (usernameExist || emailExist)
+                {
+                    throw new AppExceptions("Username or email already exist");
+                } 
                 Rols groupValue = new Rols();
                 groupValue.RolName = statusParam.Group;
                 var groupExist = getRolByName(groupValue);
 
-                if (_updateUser.Username != user.Username || _updateUser.Email != user.Email)
+                if(groupExist == null)
+                {
+                    throw new AppExceptions("Group does not exist");
+                }
+
+               /* if (_updateUser.Username != user.Username || _updateUser.Email != user.Email)
                 {
                     if (!userUnique.usernameUnique || !userUnique.emailUnique)
                     {
@@ -554,7 +584,7 @@ namespace wscore.Services
                             throw new AppExceptions("Group does not exist");
                         }
                     }
-                }
+                } */
                 Utils.Map(user, statusParam, "Update");
                 string requestCode = _updateUser.accessCode.ToString();
                 if (user.accessCode != _updateUser.accessCode)
@@ -636,15 +666,15 @@ namespace wscore.Services
             var isUniqueUsername = GetUserByUsername(username);
             var isUniqueEmail = GetUserByEmail(email);
 
-            if (isUniqueUsername != null && isUniqueEmail != null)
+            if (isUniqueUsername == true && isUniqueEmail == true)
             {
                 throw new AppExceptions("Username and email already exist");
             }
-            else if (isUniqueUsername != null)
+            else if (isUniqueUsername == true)
             {
                 throw new AppExceptions("Username already exist");
             }
-            else if (isUniqueEmail != null)
+            else if (isUniqueEmail == true)
             {
                 throw new AppExceptions("Email already exist");
             }
@@ -652,6 +682,7 @@ namespace wscore.Services
 
         }
 
+        //i am not using this anymore
         public Unique isUserExist(string username, string email)
         {
             var unique = new Unique();

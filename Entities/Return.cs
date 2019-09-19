@@ -51,6 +51,8 @@ namespace wscore.Entities
         public Notes Notes { get; set; }
         public string ContactName { get; set; }
         public string ContactPhone { get; set; }
+        public DateTime LastComunication { get; set; }
+        public double percentageTerminal { get; set; } 
     }
     public class TerminalIdsReturn
     {
@@ -74,7 +76,8 @@ namespace wscore.Entities
     {
         public double AllTotalAmount { get; set; }
         public int totalTerminals { get; set; }
-        public double TotalDeposit { get; set; }
+        public double Totalamount { get; set; }
+        public DateTime Date { get; set; }
     }
 
     public class TerminalsList
@@ -102,6 +105,17 @@ namespace wscore.Entities
         public DateTime Date { get; set; }
         public Notes DepositNotes { get; set; }
         public string UserNameDeposit { get; set; }
+    }
+
+    public class WithdrawListReturn
+    {
+        public string TerminalName { get; set; }
+        public string TerminalAddress { get; set; }
+        public int CashBoxNumber { get; set; }
+        public int Amount { get; set; }
+        public DateTime Date { get; set; }
+        public string UserNameWithdraw { get; set; }
+        public int EventId { get; set; }
     }
 
     public class TerminalCapacityBills
@@ -161,5 +175,8 @@ namespace wscore.Entities
         public int? TerminalId { get; set; }
         public int? UserId { get; set; }
     }
-
+    public class TerminalStatusReturn
+    {
+        public string Status { get; set; }
+    }
 }

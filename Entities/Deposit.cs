@@ -57,7 +57,7 @@ namespace wscore.Entities
         Error
     }
 
-    public class DepositRequest
+    public class ReportRequest
     {
         [Required]
         [DataType(DataType.Date)]
@@ -71,6 +71,11 @@ namespace wscore.Entities
     public class DepositNotesRequest
     {
         public int? DepositId { get; set; }
+    }
+
+    public class WithdrawNotesRquest
+    {
+        public int? EventId { get; set; }
     }
 
    
