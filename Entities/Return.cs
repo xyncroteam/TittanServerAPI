@@ -51,6 +51,8 @@ namespace wscore.Entities
         public Notes Notes { get; set; }
         public string ContactName { get; set; }
         public string ContactPhone { get; set; }
+        public DateTime LastComunication { get; set; }
+        public double percentageTerminal { get; set; } 
     }
     public class TerminalIdsReturn
     {

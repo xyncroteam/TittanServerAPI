@@ -323,7 +323,7 @@ namespace wscore.Controllers
         [HttpPost("listTerminals")]
         public IActionResult ListTerminals()
         {
-            var _statusReturn = _actionService.Terminals(GetUserId()); ;
+            var _statusReturn = _actionService.Terminals(); ;
             return Ok(_statusReturn);
         }
 

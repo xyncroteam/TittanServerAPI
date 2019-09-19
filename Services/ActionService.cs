@@ -28,7 +28,7 @@ namespace wscore.Services
         ActionReturn Reboot(int terminalId, int userId);
         ActionReturn RebootTCP(int terminalId, int userId);
         TerminalReturn Status(int terminalId);
-        List<TerminalReturn> Terminals(int userId);
+        List<TerminalReturn> Terminals();
         DepositReturn GetDeposit(int DepositId, int userId);
         TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId);
         ActionReturn DepositCancel(int DepositId, int TerminalId, int userId);
@@ -85,25 +85,31 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("select * from Terminal ", conn);
-
+               // MySqlCommand cmd = new MySqlCommand("select * from Terminal ", conn);
+                MySqlCommand cmd = new MySqlCommand("select Name, Address, TerminalId, TerminalDoor, LastComunication, ((currentNotes * 100) / totalCashBox) as percentageTerminal" +
+                    " from(select T.Name, T.Address, T.TerminalId, T.TerminalDoor, T.LastComunication, sum(Notes1000 + Notes500 + Notes200 + Notes100 + Notes50 + Notes20 + Notes10 + Notes5 + Notes2 + Notes1)" +
+                    " as currentNotes, sum(CashBoxCapacity) as totalCashBox from Terminal T left join TerminalNotes N on T.TerminalId = N.TerminalId group by T.TerminalId) as total; ", conn);
+                    
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
                         Terminal _terminal = new Terminal();
                         _terminal.Address = reader["Address"].ToString();
-                        _terminal.IP = reader["IP"].ToString();
-                        _terminal.Description = reader["Description"].ToString();
-                        _terminal.TimeOff = int.Parse(reader["timeOff"].ToString());
+                      //  _terminal.IP = reader["IP"].ToString();
+                      //  _terminal.Description = reader["Description"].ToString();
+                      //  _terminal.TimeOff = int.Parse(reader["timeOff"].ToString());
                         _terminal.TerminalDoor = reader["TerminalDoor"].ToString();
                         _terminal.Name = reader["Name"].ToString();
-                        _terminal.CashBoxDoor = reader["CashBoxDoor"].ToString();
-                        _terminal.Notes = int.Parse(reader["Notes"].ToString());
+                      //  _terminal.CashBoxDoor = reader["CashBoxDoor"].ToString();
+                     //   _terminal.Notes = int.Parse(reader["Notes"].ToString());
                         _terminal.TerminalId = int.Parse(reader["TerminalId"].ToString());
-                        _terminal.TotalAmount = int.Parse(reader["TotalAmount"].ToString());
+                     //   _terminal.TotalAmount = int.Parse(reader["TotalAmount"].ToString());
+                        _terminal.LastComunication = reader["LastComunication"] != DBNull.Value ? DateTime.Parse(reader["LastComunication"].ToString()) : DateTime.Parse("1990-01-01 00:00:00")  ;
+                        _terminal.percentageTerminal = reader["percentageTerminal"] != DBNull.Value ? double.Parse(reader["percentageTerminal"].ToString()) : 0;
                         _listTerminal.Add(_terminal);
                     }
+                   
                 }
             }
 
@@ -1029,7 +1035,7 @@ namespace wscore.Services
             return _statusReturn;
         }
 
-        public List<TerminalReturn> Terminals(int userId)
+        public List<TerminalReturn> Terminals()
         {
             var _terminals = ListTerminal();
             List<TerminalReturn> _listReturn = new List<TerminalReturn>();
@@ -1041,16 +1047,18 @@ namespace wscore.Services
                     r.TerminalId = t.TerminalId;
                     r.Name = t.Name;
                     r.Address = t.Address;
-                    r.Bills = t.Notes;
-                    r.CashBoxDoor = t.CashBoxDoor;
-                    r.Description = t.Description;
+                   // r.Bills = t.Notes;
+                   // r.CashBoxDoor = t.CashBoxDoor;
+                   // r.Description = t.Description;
                     /* if (IsOnline(t.IP))
                          r.Status = Entities.TerminalStatus.Online.ToString();
                      else
                          r.Status = Entities.TerminalStatus.Offline.ToString();*/
                     r.TerminalDoor = t.TerminalDoor;
-                    r.TimeOff = t.TimeOff;
-                    r.TotalAmount = t.TotalAmount;
+                   // r.TimeOff = t.TimeOff;
+                  //  r.TotalAmount = t.TotalAmount;
+                    r.LastComunication = t.LastComunication;
+                    r.percentageTerminal = t.percentageTerminal;
 
                     _listReturn.Add(r);
                 }
