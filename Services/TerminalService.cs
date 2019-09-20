@@ -22,6 +22,7 @@ namespace wscore.Services
         bool DepositFromTerminal(DepositFromTerminal deposit);
         bool WithdrawFromTerminal(CashBox box);
         bool CashBoxFromTerminal(List<CashBox> lBox);
+        List<UserReturn> getTerminalUsers(int terminalId);
     }
 
     public class TerminalService : ITerminalService
@@ -536,6 +537,39 @@ namespace wscore.Services
                 UpdateTerminalDoor(_event.TerminalId, "Close");
 
 
+        }
+
+        public List<UserReturn> getTerminalUsers(int terminalId)
+        {
+            List<UserReturn> _listUsers = new List<UserReturn>();
+            if (terminalId != null)
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("select ut.UserId, u.UserName, u.FirstName , u.LastName, u.Code , c.Name from UserTerminal ut join User u on u.UserId = ut.UserId" +
+                        " join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where TerminalId = " + terminalId.ToString() + ";UPDATE Terminal SET LastComunication = NOW()  WHERE TerminalId = " + terminalId.ToString() + ";" , conn);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            UserReturn _user = new UserReturn();
+                            _user.Id = int.Parse(reader["UserId"].ToString());
+                            _user.Username = reader["Username"].ToString();
+                            _user.FirstName = reader["FirstName"].ToString();
+                            _user.LastName = reader["LastName"].ToString();
+                            _user.Group = reader["Name"].ToString();
+                            _user.accessCode = Int32.Parse(reader["Code"].ToString());
+
+                            _listUsers.Add(_user);
+                        }
+                    }
+                }
+                
+            }
+
+            return _listUsers;
         }
 
     }
