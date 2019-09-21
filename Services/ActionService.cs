@@ -22,7 +22,7 @@ namespace wscore.Services
     public interface IActionService
     {
         DepositReturn Deposit(int terminalId, string number, int total, int userId);
-        DepositReturn DepositTCP(int terminalId, int userId);
+        ActionReturn DepositTCP(int terminalId, int userId);
         ActionReturn OpenDoor(int terminalId, int userId);
         ActionReturn OpenDoorTCP(EventTCP action);
         ActionReturn Reboot(int terminalId, int userId);
@@ -910,23 +910,27 @@ namespace wscore.Services
             return _depositReturn;
         }
 
-        public DepositReturn DepositTCP(int terminalId, int userId)
+        public ActionReturn DepositTCP(int terminalId, int userId)
         {
             var _terminal = GetTerminal(terminalId);
 
-            var _event = new Event();
+            //var _event = new Event();
 
-            _event.TerminalId = terminalId;
-            _event.EventTypeId = 1;
-            _event.EventType = EventType.Deposit;
-            _event.UserId = userId;
-            _event = EventInsert(_event);
+            //_event.TerminalId = terminalId;
+            //_event.EventTypeId = 1;
+            //_event.EventType = EventType.Deposit;
+            //_event.UserId = userId;
+            //_event = EventInsert(_event);
 
-            var _deposit = new Deposit();
-            _deposit.EventId = _event.EventId;
+            //var _deposit = new Deposit();
+            //_deposit.EventId = _event.EventId;
             //_deposit.DepositNumber = number;
-            _deposit.Amount = 0;
-            _deposit.TerminalId = terminalId;
+            //_deposit.Amount = 0;
+            //_deposit.TerminalId = terminalId;
+
+            var _eventReturn = new ActionReturn();
+            _eventReturn.TerminalId = terminalId;//_event.TerminalId;
+            _eventReturn.EventType = EventType.Deposit.ToString();//_event.EventType.ToString();
 
             if (_terminal != null)
             {
@@ -942,53 +946,62 @@ namespace wscore.Services
                         clienttcp.StringEncoder = Encoding.UTF8;
                         clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
 
-                        _deposit.Status = DepositStatus.Sending;
-                        //_deposit = DepositInsert(_deposit);
+                        //_deposit.Status = DepositStatus.Sending;
+                        ////_deposit = DepositInsert(_deposit);
 
-                        _event.Status = EventStatus.Successful;
-                        _event = EventUpdate(_event);
+                        //_event.Status = EventStatus.Successful;
+                        //_event = EventUpdate(_event);
 
-                        var resp = clienttcp.WriteLineAndGetReply("deposit," + _deposit.DepositId.ToString(), TimeSpan.FromSeconds(2));
+                        //var resp = 
+                        clienttcp.WriteLineAndGetReply("deposit" , TimeSpan.FromSeconds(2));
 
-                        if (resp.MessageString != null)
-                        {
-                            if (resp.MessageString.Contains("processing"))
-                            {
-                                _deposit.Status = DepositStatus.Processing;
-                                //_deposit = DepositUpdate(_deposit);
-                            }
-                            else
-                            {
-                                _deposit.Status = DepositStatus.Error;
-                                //_deposit = DepositUpdate(_deposit);
-                            }
-                        }
+                        _eventReturn.Status = EventStatus.Successful.ToString();
+
+                        //if (resp.MessageString != null)
+                        //{
+                        //    if (resp.MessageString.Contains("processing"))
+                        //    {
+                        //        _deposit.Status = DepositStatus.Processing;
+                        //        //_deposit = DepositUpdate(_deposit);
+                        //    }
+                        //    else
+                        //    {
+                        //        _deposit.Status = DepositStatus.Error;
+                        //        //_deposit = DepositUpdate(_deposit);
+                        //    }
+                        //}
                     }
                     catch
                     {
-                        _event.Status = EventStatus.Busy;
-                        _event = EventUpdate(_event);
+                        _eventReturn.Status = EventStatus.Busy.ToString(); ;
+                        //_event.Status = EventStatus.Busy;
+                        //_event = EventUpdate(_event);
                     }
                 }
                 else
                 {
-                    _event.Status = EventStatus.OffLine;
-                    _event = EventUpdate(_event);
-                    _deposit.Status = DepositStatus.OffLine;
+                    _eventReturn.Status = EventStatus.OffLine.ToString(); ;
+                    //_event.Status = EventStatus.OffLine;
+                    //_event = EventUpdate(_event);
+                    //_deposit.Status = DepositStatus.OffLine;
                     //_deposit = DepositUpdate(_deposit);
                 }
 
             }
+            else
+            {
+                _eventReturn.Status = EventStatus.Error.ToString();
+            }
 
-            DepositReturn _depositReturn = new DepositReturn();
-            _depositReturn.Amount = _deposit.Amount;
-            _depositReturn.Date = DateTime.Now.ToString();
-            _depositReturn.DepositId = _deposit.DepositId;
-            // _depositReturn.Number = _deposit.DepositNumber;
-            _depositReturn.Status = _deposit.Status.ToString();
-            _depositReturn.TerminalId = _deposit.TerminalId;
+            //DepositReturn _depositReturn = new DepositReturn();
+            //_depositReturn.Amount = _deposit.Amount;
+            //_depositReturn.Date = DateTime.Now.ToString();
+            //_depositReturn.DepositId = _deposit.DepositId;
+            //// _depositReturn.Number = _deposit.DepositNumber;
+            //_depositReturn.Status = _deposit.Status.ToString();
+            //_depositReturn.TerminalId = _deposit.TerminalId;
 
-            return _depositReturn;
+            return _eventReturn;
         }
 
         public TerminalReturn UpdateDepositTimeOff(int terminalId, int timeOff, int userId)

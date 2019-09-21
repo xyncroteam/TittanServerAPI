@@ -6,6 +6,19 @@ using System.Collections.Generic;
 
 namespace wscore.Entities
 {
+
+    public class CashBox
+    {
+        public string TerminalId { get; set; }
+        public string Id { get; set; }
+        public string Position { get; set; }
+        public string Count { get; set; }
+        public List<Note> Notes { get; set; }
+        public string Date { get; set; }
+        public int UserId { get; set; }
+        public int EventId { get; set; }
+    }
+
     public class Deposit
     {
         public int DepositId { get; set; }
@@ -30,7 +43,7 @@ namespace wscore.Entities
         public string Amount { get; set; }
         public List<Note> Notes { get; set; }
         public string Date { get; set; }
-      
+        public int EventId { get; set; }
     }
 
     public enum DepositStatus

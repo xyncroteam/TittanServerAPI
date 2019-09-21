@@ -18,7 +18,11 @@ namespace wscore.Services
     {
         void DepositTerminal(string deposit);
         void EventTerminal(int terminalId, int eventId);
+        void EventFromTerminal(Event eventParam);
         bool DepositFromTerminal(DepositFromTerminal deposit);
+        bool WithdrawFromTerminal(CashBox box);
+        bool CashBoxFromTerminal(List<CashBox> lBox);
+        List<UserReturn> getTerminalUsers(int terminalId);
     }
 
     public class TerminalService : ITerminalService
@@ -204,11 +208,88 @@ namespace wscore.Services
 
         }
 
-        #endregion
+        private Event EventFromTerminalInsert(Event Event)
+        {
+            var _event = Event;
+            string strQ = "";
+            if (_event.UserId == 0)
+            {
+                strQ = "insert into EventTerminal (TerminalId,EventTypeId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + ", NOW());SELECT LAST_INSERT_ID();";
+            }
+            else
+            {
+                strQ = "insert into Event (TerminalId,EventTypeId,UserId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + "," + _event.UserId.ToString() + ", NOW());SELECT LAST_INSERT_ID();";
+            }
+
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand(strQ, conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        _event.EventId = Convert.ToInt32(reader[0]);
+                    }
+                }
+            }
+            return _event;
+        }
 
         #endregion
 
-        #region Deposit
+        #endregion
+
+        #region Deposit/Withdraw 
+
+        private void WithdrawInsert(CashBox box)
+        {
+            string strCol = "";
+            string strVal = "";
+            foreach (var n in box.Notes)
+            {
+                strCol += ",Notes" + n.NoteId;
+
+                strVal += "," + n.Count;
+            }
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("insert into Withdraw (TerminalId,CashBoxNumber,Date,UserId,EventId" + strCol + ") values (" + box.TerminalId + "," + box.Id + ", NOW()," + box.UserId + "," + box.EventId + strVal + ");", conn);
+                cmd.ExecuteNonQuery();
+            }
+            
+        }
+
+        private void CashBoxupdate(CashBox box)
+        {
+            
+            using (MySqlConnection conn = GetConnection())
+            {
+                string strSet = "";
+                
+                foreach (var n in box.Notes)
+                {
+                    if(strSet == "")
+                        strSet += "Notes" + n.NoteId + " = " + n.Count;
+                    else
+                        strSet += " , Notes" + n.NoteId + " = " + n.Count;
+                }
+
+                string strQ = "UPDATE TerminalNotes SET Notes1000=0,Notes500=0,Notes200=0,Notes100=0,Notes50=0,Notes20=0,Notes10=0,Notes5=0,Notes2=0,Notes1=0 where TerminalId = " + box.TerminalId + " and CashBoxNumber = " + box.Id + ";"; 
+
+                if (strSet != "")
+                {
+                    strQ += "UPDATE TerminalNotes SET " + strSet + " where TerminalId = " + box.TerminalId + " and CashBoxNumber = " + box.Id + "; ";
+                }
+
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand(strQ, conn);
+                cmd.ExecuteNonQuery();
+            }
+
+            
+        }
 
         private Deposit DepositUpdate(Deposit deposit)
         {
@@ -266,7 +347,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ", NOW()," + _deposit.TerminalId + "," + _deposit.UserId + ");SELECT LAST_INSERT_ID();", conn);
+                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId,EventId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ", NOW()," + _deposit.TerminalId + "," + _deposit.UserId + "," + _deposit.EventId + ");SELECT LAST_INSERT_ID();", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -304,14 +385,64 @@ namespace wscore.Services
 
         #endregion
 
+        public bool CashBoxFromTerminal(List<CashBox> lBox)
+        {
+            bool ok = true;
+
+            try
+            {
+                foreach (var box in lBox)
+                {
+                    CashBoxupdate(box);
+                }
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            return ok;
+        }
+
         public bool DepositFromTerminal(DepositFromTerminal deposit)
         {
             bool ok = true;
 
             try
             {
+                var _event = new Event();
+
+                _event.UserId = Convert.ToInt16(deposit.UserId);
+                _event.TerminalId = Convert.ToInt16(deposit.TerminalId);
+                _event.EventTypeId = 1;
+                _event = EventFromTerminalInsert(_event);
+                deposit.EventId = _event.EventId;
                 deposit = DepositInsert(deposit);
                 DepositNotesInsert(deposit);
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            return ok;
+        }
+
+        public bool WithdrawFromTerminal(CashBox box)
+        {
+            bool ok = true;
+
+            try
+            {
+                var _event = new Event();
+
+                _event.UserId = box.UserId;
+                _event.TerminalId = Convert.ToInt16(box.TerminalId);
+                _event.EventTypeId = 25;
+                _event = EventFromTerminalInsert(_event);
+                box.EventId = _event.EventId;
+
+                WithdrawInsert(box);
             }
             catch
             {
@@ -387,7 +518,60 @@ namespace wscore.Services
             if (_event.EventTypeId == 8)
                 UpdateTerminalNotes(_depo, 0);
         }
+
+        public void EventFromTerminal(Event eventParam)
+        {
+            var _event = eventParam;
+
+            /*_event.UserId = userId;
+            _event.TerminalId = terminalId;
+            _event.EventTypeId = eventId;
+            */
+            EventFromTerminalInsert(_event);
+
+            if (_event.EventTypeId == 3)
+                UpdateTerminalDoor(_event.TerminalId, "Open");
+
+            
+            if (_event.EventTypeId == 9)
+                UpdateTerminalDoor(_event.TerminalId, "Close");
+
+
+        }
+
+        public List<UserReturn> getTerminalUsers(int terminalId)
+        {
+            List<UserReturn> _listUsers = new List<UserReturn>();
+            if (terminalId != null)
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("select ut.UserId, u.UserName, u.FirstName , u.LastName, u.Code , c.Name from UserTerminal ut join User u on u.UserId = ut.UserId" +
+                        " join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where TerminalId = " + terminalId.ToString() + ";UPDATE Terminal SET LastComunication = NOW()  WHERE TerminalId = " + terminalId.ToString() + ";" , conn);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            UserReturn _user = new UserReturn();
+                            _user.Id = int.Parse(reader["UserId"].ToString());
+                            _user.Username = reader["Username"].ToString();
+                            _user.FirstName = reader["FirstName"].ToString();
+                            _user.LastName = reader["LastName"].ToString();
+                            _user.Group = reader["Name"].ToString();
+                            _user.accessCode = Int32.Parse(reader["Code"].ToString());
+
+                            _listUsers.Add(_user);
+                        }
+                    }
+                }
                 
+            }
+
+            return _listUsers;
+        }
+
     }
 
 }
