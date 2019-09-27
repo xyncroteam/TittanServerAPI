@@ -1624,6 +1624,7 @@ namespace wscore.Services
                 {
                     sql += " and d.TerminalId = " + TerminalId + " ";
                 }
+                sql += "order by DateEnd desc ";
 
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
 
@@ -1846,6 +1847,9 @@ namespace wscore.Services
                 {
                     sql += " and ( E.EventTypeId = ' " + DepositOption + " ') ";
                 }
+
+                sql += "order by Date desc ";
+
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
 
                 using (var reader = cmd.ExecuteReader())
@@ -2012,12 +2016,13 @@ namespace wscore.Services
                 sql = "select t.Name, t.Address, u.FirstName , u.LastName, Date , w.CashboxNumber , EventId,  " +
                     " ((Notes1000 * 1000) + (Notes500 * 500) + (Notes200 * 200) + (Notes100 * 100) + (Notes50 * 50) + (Notes20 * 20) + (Notes10 * 10) + (Notes5 * 5) + (Notes2 * 2) + (Notes1 * 1)) " +
                     "as totalWithdraw from Withdraw w inner join Terminal t on w.TerminalId = t.TerminalId inner join User u on w.UserId = u.UserId " +
-                    " where w.Date >= '" + startDate + "' and w.Date <= '" + endDate + "' ";
+                    " where w.Date >= '" + startDate + "' and w.Date <= '" + endDate + "'  ";
 
                 if (TerminalId != null)
                 {
                     sql += " and w.TerminalId = " + TerminalId + " ";
                 }
+                sql += "order by Date desc ";
 
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
 
