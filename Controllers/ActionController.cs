@@ -269,11 +269,25 @@ namespace wscore.Controllers
             return Ok(_eventReturn);
         }
 
+
+
         [Authorize(Roles = "Admin")]
         [HttpPost("opendoor")]
         public IActionResult OpenDoor([FromBody]Event eventParam)
         {
             var _eventReturn = _actionService.OpenDoor(eventParam.TerminalId, GetUserId());
+            _eventReturn.Date = DateTime.Now.ToString();
+            _eventReturn.UserName = GetUserName();
+
+            return Ok(_eventReturn);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("resettcp")]
+        public IActionResult ResetTCP([FromBody]EventTCP eventParam)
+        {
+            eventParam.UserId = GetUserId();
+            var _eventReturn = _actionService.ResetTCP(eventParam);
             _eventReturn.Date = DateTime.Now.ToString();
             _eventReturn.UserName = GetUserName();
 
@@ -296,6 +310,18 @@ namespace wscore.Controllers
         public IActionResult UpdateDepositTimeOff([FromBody]TerminalReturn eventParam)
         {
             var _eventReturn = _actionService.UpdateDepositTimeOff(eventParam.TerminalId, eventParam.TimeOff, GetUserId());
+
+            return Ok(_eventReturn);
+        }
+
+        [Authorize(Roles = "Admin,User")]
+        [HttpPost("deposittcp")]
+        public IActionResult DepositTCP([FromBody]EventTCP eventParam)
+        {
+            eventParam.UserId = GetUserId();
+            var _eventReturn = _actionService.DepositTCP(eventParam);
+            _eventReturn.Date = DateTime.Now.ToString();
+            _eventReturn.UserName = GetUserName();
 
             return Ok(_eventReturn);
         }
