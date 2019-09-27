@@ -210,15 +210,24 @@ namespace wscore.Services
 
         private Event EventFromTerminalInsert(Event Event)
         {
+            string date = "";
+            if (Event != null)
+            {
+                if (Event.Date != null)
+                {
+                    date = Event.Date.ToString("yyyy-MM-dd hh:mm:ss"); //deposit.Date.Year.ToString() + "-" + deposit.Date.Month.ToString() + "-" + deposit.Date.Day.ToString() + " " + deposit.Date.datet
+                }
+            }
+
             var _event = Event;
             string strQ = "";
             if (_event.UserId == 0)
             {
-                strQ = "insert into EventTerminal (TerminalId,EventTypeId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + ", NOW());SELECT LAST_INSERT_ID();";
+                strQ = "insert into EventTerminal (TerminalId,EventTypeId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + ",'" + date + "'); SELECT LAST_INSERT_ID();";
             }
             else
             {
-                strQ = "insert into Event (TerminalId,EventTypeId,UserId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + "," + _event.UserId.ToString() + ", NOW());SELECT LAST_INSERT_ID();";
+                strQ = "insert into Event (TerminalId,EventTypeId,UserId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + "," + _event.UserId.ToString() + ",'" + date + "');SELECT LAST_INSERT_ID();";
             }
 
             using (MySqlConnection conn = GetConnection())
@@ -244,6 +253,14 @@ namespace wscore.Services
 
         private void WithdrawInsert(CashBox box)
         {
+            string date = "";
+            if (box != null)
+            {
+                if (box.Date != null)
+                {
+                    date = box.Date.ToString("yyyy-MM-dd hh:mm:ss"); //deposit.Date.Year.ToString() + "-" + deposit.Date.Month.ToString() + "-" + deposit.Date.Day.ToString() + " " + deposit.Date.datet
+                }
+            }
             string strCol = "";
             string strVal = "";
             foreach (var n in box.Notes)
@@ -255,7 +272,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("insert into Withdraw (TerminalId,CashBoxNumber,Date,UserId,EventId" + strCol + ") values (" + box.TerminalId + "," + box.Id + ", NOW()," + box.UserId + "," + box.EventId + strVal + ");", conn);
+                MySqlCommand cmd = new MySqlCommand("insert into Withdraw (TerminalId,CashBoxNumber,Date,UserId,EventId" + strCol + ") values (" + box.TerminalId + "," + box.Id + ",'" + date + "'," + box.UserId + "," + box.EventId + strVal + ");", conn);
                 cmd.ExecuteNonQuery();
             }
             
@@ -342,12 +359,19 @@ namespace wscore.Services
         private DepositFromTerminal DepositInsert(DepositFromTerminal deposit)
         {
             var _deposit = deposit;
-
+            string date="";
+            if (deposit != null)
+            {
+                if (deposit.Date != null)
+                {
+                    date = deposit.Date.ToString("yyyy-MM-dd hh:mm:ss"); //deposit.Date.Year.ToString() + "-" + deposit.Date.Month.ToString() + "-" + deposit.Date.Day.ToString() + " " + deposit.Date.datet
+                }
+            }
             _deposit.Amount = Decimal.ToInt32(Convert.ToDecimal(_deposit.Amount)).ToString();
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId,EventId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ", NOW()," + _deposit.TerminalId + "," + _deposit.UserId + "," + _deposit.EventId + ");SELECT LAST_INSERT_ID();", conn);
+                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId,EventId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ",'" + date + "'," + _deposit.TerminalId + "," + _deposit.UserId + "," + _deposit.EventId + ");SELECT LAST_INSERT_ID();", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())

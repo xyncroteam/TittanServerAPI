@@ -25,6 +25,8 @@ namespace wscore.Services
         ActionReturn DepositTCP(int terminalId, int userId);
         ActionReturn OpenDoor(int terminalId, int userId);
         ActionReturn OpenDoorTCP(EventTCP action);
+        ActionReturn ResetTCP(EventTCP action);
+        ActionReturn DepositTCP(EventTCP action);
         ActionReturn Reboot(int terminalId, int userId);
         ActionReturn RebootTCP(int terminalId, int userId);
         TerminalReturn Status(int terminalId);
@@ -696,6 +698,126 @@ namespace wscore.Services
             _eventReturn.TerminalId = _event.TerminalId;
             _eventReturn.EventType = _event.EventType.ToString();
             _eventReturn.Status = _event.Status.ToString();
+
+            return _eventReturn;
+        }
+
+        public ActionReturn DepositTCP(EventTCP action)
+        {
+            var _terminal = GetTerminal(action.TerminalId);
+
+            var _eventReturn = new ActionReturn();
+            _eventReturn.TerminalId = action.TerminalId;//_event.TerminalId;
+            _eventReturn.EventType = EventType.OpenDoor.ToString();//_event.EventType.ToString();
+
+            //var _event = new Event();
+
+            //_event.TerminalId = terminalId;
+
+            if (_terminal != null)
+            {
+                //_event.EventTypeId = 3;
+                //_event.EventType = EventType.OpenDoor;
+                //_event.UserId = userId;
+                //_event = EventInsert(_event);
+
+
+                if (IsOnline(_terminal.IP))
+                {
+                    try
+                    {
+
+                        action.Event = EventType.Deposit.ToString();
+
+                        string strParam = Newtonsoft.Json.JsonConvert.SerializeObject(action);// DeserializeObject<Deposit>(jsonDepo);
+
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+                        clienttcp.WriteLineAndGetReply(strParam, TimeSpan.FromSeconds(1));
+
+                        _eventReturn.Status = EventStatus.Successful.ToString();
+                        //_event = EventUpdate(_event);
+                    }
+                    catch
+                    {
+                        _eventReturn.Status = EventStatus.Busy.ToString(); ;
+                        //_event = EventUpdate(_event);
+                    }
+                }
+                else
+                {
+                    _eventReturn.Status = EventStatus.OffLine.ToString(); ;
+                    //_event = EventUpdate(_event);
+                }
+            }
+            else
+            {
+                _eventReturn.Status = EventStatus.Error.ToString();
+            }
+
+            //_eventReturn.Status = _event.Status.ToString();
+
+            return _eventReturn;
+        }
+
+        public ActionReturn ResetTCP(EventTCP action)
+        {
+            var _terminal = GetTerminal(action.TerminalId);
+
+            var _eventReturn = new ActionReturn();
+            _eventReturn.TerminalId = action.TerminalId;//_event.TerminalId;
+            _eventReturn.EventType = EventType.OpenDoor.ToString();//_event.EventType.ToString();
+
+            //var _event = new Event();
+
+            //_event.TerminalId = terminalId;
+
+            if (_terminal != null)
+            {
+                //_event.EventTypeId = 3;
+                //_event.EventType = EventType.OpenDoor;
+                //_event.UserId = userId;
+                //_event = EventInsert(_event);
+
+
+                if (IsOnline(_terminal.IP))
+                {
+                    try
+                    {
+
+                        action.Event = EventType.Reset.ToString();
+
+                        string strParam = Newtonsoft.Json.JsonConvert.SerializeObject(action);// DeserializeObject<Deposit>(jsonDepo);
+
+                        SimpleTcpClient clienttcp;
+                        clienttcp = new SimpleTcpClient();
+                        clienttcp.StringEncoder = Encoding.UTF8;
+                        clienttcp.Connect(_terminal.IP, Convert.ToInt32("8910"));
+                        clienttcp.WriteLineAndGetReply(strParam, TimeSpan.FromSeconds(1));
+
+                        _eventReturn.Status = EventStatus.Successful.ToString();
+                        //_event = EventUpdate(_event);
+                    }
+                    catch
+                    {
+                        _eventReturn.Status = EventStatus.Busy.ToString(); ;
+                        //_event = EventUpdate(_event);
+                    }
+                }
+                else
+                {
+                    _eventReturn.Status = EventStatus.OffLine.ToString(); ;
+                    //_event = EventUpdate(_event);
+                }
+            }
+            else
+            {
+                _eventReturn.Status = EventStatus.Error.ToString();
+            }
+
+            //_eventReturn.Status = _event.Status.ToString();
 
             return _eventReturn;
         }
