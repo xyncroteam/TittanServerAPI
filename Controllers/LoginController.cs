@@ -29,19 +29,25 @@ namespace wscore.Controllers
         [HttpPost("authenticate")]
         public IActionResult Authenticate([FromBody]User userParam)
         {
-            var user = _loginService.Authenticate(userParam.Username, userParam.Password);
+            try
+            {
+                var user = _loginService.Authenticate(userParam.Username, userParam.Password);
 
-            if (user == null)
-                return BadRequest(new { message = "Username or password is incorrect" });
+                if (user == null)
+                    return BadRequest(new { message = "Username or password is incorrect" });
 
-            Login login = new Login();
-            login.FirstName = user.FirstName;
-            login.LastName = user.LastName;
-            login.Username = user.Username;
-            login.Token = user.Token;
+                Login login = new Login();
+                login.FirstName = user.FirstName;
+                login.LastName = user.LastName;
+                login.Username = user.Username;
+                login.Token = user.Token;
 
-            return Ok(login);
-
+                return Ok(login);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [AllowAnonymous]
@@ -96,7 +102,7 @@ namespace wscore.Controllers
         {
             try
             {
-                if (statusParam.accessCode == 0 )
+                if (statusParam.accessCode == 0)
                 {
                     ModelState.Remove("accessCode");
                 }
