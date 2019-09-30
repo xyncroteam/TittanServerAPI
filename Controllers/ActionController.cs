@@ -634,7 +634,7 @@ namespace wscore.Controllers
             return Ok(_terminalsCapacity);
         }
 
-        [Authorize(Roles = "Admin, USer")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPost("terminalbillcapacity")]
         public IActionResult GetTerminalBillCapacity([FromBody]TerminalRequest terminalIdparam)
         {
@@ -649,7 +649,7 @@ namespace wscore.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, USer")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPost("totalsystembills")]
         public IActionResult GetTotalTerminalBills([FromBody]TerminalRequest terminalIdparam)
         {
@@ -664,7 +664,7 @@ namespace wscore.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, USer")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPost("cahboxbills")]
         public IActionResult GetCashBoxNumberBills([FromBody]CashBoxRequest cashBoxparam)
         {
@@ -679,7 +679,7 @@ namespace wscore.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, USer")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPost("terminalevents")]
         public IActionResult GetTerminalEvents([FromBody]EventRequest eventparam)
         {
