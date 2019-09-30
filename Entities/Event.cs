@@ -10,7 +10,7 @@ namespace wscore.Entities
         public int EventTypeId { get; set; }
         public EventType EventType { get; set; }
         public EventStatus Status { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
     }
 
     public class EventTCP

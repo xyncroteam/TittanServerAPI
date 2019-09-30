@@ -14,7 +14,7 @@ namespace wscore.Entities
         public string Position { get; set; }
         public string Count { get; set; }
         public List<Note> Notes { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
         public int UserId { get; set; }
         public int EventId { get; set; }
     }
@@ -42,7 +42,7 @@ namespace wscore.Entities
         public string DepositNumber { get; set; }
         public string Amount { get; set; }
         public List<Note> Notes { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
         public int EventId { get; set; }
     }
 

@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace wscore.Entities
 {
+    public class UserStatus
+    {
+        public int TerminalId { get; set; }
+        public string Date { get; set; }
+    }
+
     public class User
     {
         public int Id { get; set; }

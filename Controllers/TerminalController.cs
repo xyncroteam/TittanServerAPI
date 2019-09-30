@@ -61,8 +61,8 @@ namespace wscore.Controllers
         }
 
 
-        [AllowAnonymous]
-        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        //[AllowAnonymous]
+        [ServiceFilter(typeof(ClientIdCheckFilter))]
         [HttpPost("eventfromterminal")]
         public IActionResult EventFromTerminal([FromBody]Event eventParam)
         {
@@ -74,8 +74,8 @@ namespace wscore.Controllers
         }
 
 
-        [AllowAnonymous]
-        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        //[AllowAnonymous]
+        [ServiceFilter(typeof(ClientIdCheckFilter))]
         [HttpPost("depositfromterminal")]
         public IActionResult DepositFromTerminal([FromBody]DepositFromTerminal deposit)
         {
@@ -87,8 +87,8 @@ namespace wscore.Controllers
         }
 
 
-        [AllowAnonymous]
-        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        //[AllowAnonymous]
+        [ServiceFilter(typeof(ClientIdCheckFilter))]
         [HttpPost("cashboxfromterminal")]
         public IActionResult CashBoxFromTerminal([FromBody]List<CashBox> lBox)
         {
@@ -100,8 +100,8 @@ namespace wscore.Controllers
         }
 
 
-        [AllowAnonymous]
-        //[ServiceFilter(typeof(ClientIdCheckFilter))]
+        //[AllowAnonymous]
+        [ServiceFilter(typeof(ClientIdCheckFilter))]
         [HttpPost("withdrawfromterminal")]
         public IActionResult WithdrawFromTerminal([FromBody]CashBox box)
         {
@@ -112,16 +112,16 @@ namespace wscore.Controllers
                 return Ok("error");
         }
 
-        [ServiceFilter(typeof(ClientIdCheckFilter))]
         //[AllowAnonymous]
+        [ServiceFilter(typeof(ClientIdCheckFilter))]
         [HttpPost("getusersfromterminal")]
-        public IActionResult GetTerminalUsers([FromBody]string terminalid)
+        public IActionResult GetTerminalUsers([FromBody]UserStatus status)
         {
             try
             {
-                if (terminalid != "")
+                if (status != null)
                 {
-                    var result = _terminalService.getTerminalUsers(Convert.ToInt32(terminalid));
+                    var result = _terminalService.getTerminalUsers(status);
                     return Ok(result);
                 }
                 else

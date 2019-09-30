@@ -22,7 +22,7 @@ namespace wscore.Services
         bool DepositFromTerminal(DepositFromTerminal deposit);
         bool WithdrawFromTerminal(CashBox box);
         bool CashBoxFromTerminal(List<CashBox> lBox);
-        List<UserReturn> getTerminalUsers(int terminalId);
+        List<UserReturn> getTerminalUsers(UserStatus status);
     }
 
     public class TerminalService : ITerminalService
@@ -210,24 +210,24 @@ namespace wscore.Services
 
         private Event EventFromTerminalInsert(Event Event)
         {
-            string date = "";
+            /*string date = "";
             if (Event != null)
             {
                 if (Event.Date != null)
                 {
                     date = Event.Date.ToString("yyyy-MM-dd hh:mm:ss"); //deposit.Date.Year.ToString() + "-" + deposit.Date.Month.ToString() + "-" + deposit.Date.Day.ToString() + " " + deposit.Date.datet
                 }
-            }
+            }*/
 
             var _event = Event;
             string strQ = "";
-            if (_event.UserId == 0)
+            if ( (_event.UserId == 0) && (_event.EventTypeId != 25) )
             {
-                strQ = "insert into EventTerminal (TerminalId,EventTypeId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + ",'" + date + "'); SELECT LAST_INSERT_ID();";
+                strQ = "insert into EventTerminal (TerminalId,EventTypeId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + ",'" + _event.Date + "'); SELECT LAST_INSERT_ID();";
             }
             else
             {
-                strQ = "insert into Event (TerminalId,EventTypeId,UserId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + "," + _event.UserId.ToString() + ",'" + date + "');SELECT LAST_INSERT_ID();";
+                strQ = "insert into Event (TerminalId,EventTypeId,UserId,Date) values (" + _event.TerminalId.ToString() + "," + _event.EventTypeId.ToString() + "," + _event.UserId.ToString() + ",'" + _event.Date + "');SELECT LAST_INSERT_ID();";
             }
 
             using (MySqlConnection conn = GetConnection())
@@ -253,14 +253,14 @@ namespace wscore.Services
 
         private void WithdrawInsert(CashBox box)
         {
-            string date = "";
+            /*string date = "";
             if (box != null)
             {
                 if (box.Date != null)
                 {
                     date = box.Date.ToString("yyyy-MM-dd hh:mm:ss"); //deposit.Date.Year.ToString() + "-" + deposit.Date.Month.ToString() + "-" + deposit.Date.Day.ToString() + " " + deposit.Date.datet
                 }
-            }
+            }*/
             string strCol = "";
             string strVal = "";
             foreach (var n in box.Notes)
@@ -272,7 +272,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("insert into Withdraw (TerminalId,CashBoxNumber,Date,UserId,EventId" + strCol + ") values (" + box.TerminalId + "," + box.Id + ",'" + date + "'," + box.UserId + "," + box.EventId + strVal + ");", conn);
+                MySqlCommand cmd = new MySqlCommand("insert into Withdraw (TerminalId,CashBoxNumber,Date,UserId,EventId" + strCol + ") values (" + box.TerminalId + "," + box.Id + ",'" + box.Date + "'," + box.UserId + "," + box.EventId + strVal + ");", conn);
                 cmd.ExecuteNonQuery();
             }
             
@@ -359,19 +359,19 @@ namespace wscore.Services
         private DepositFromTerminal DepositInsert(DepositFromTerminal deposit)
         {
             var _deposit = deposit;
-            string date="";
+            /*string date="";
             if (deposit != null)
             {
                 if (deposit.Date != null)
                 {
                     date = deposit.Date.ToString("yyyy-MM-dd hh:mm:ss"); //deposit.Date.Year.ToString() + "-" + deposit.Date.Month.ToString() + "-" + deposit.Date.Day.ToString() + " " + deposit.Date.datet
                 }
-            }
+            }*/
             _deposit.Amount = Decimal.ToInt32(Convert.ToDecimal(_deposit.Amount)).ToString();
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId,EventId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ",'" + date + "'," + _deposit.TerminalId + "," + _deposit.UserId + "," + _deposit.EventId + ");SELECT LAST_INSERT_ID();", conn);
+                MySqlCommand cmd = new MySqlCommand("insert into Deposit (DepositNumber,Amount, DateEnd,TerminalId,UserId,EventId) values ('" + _deposit.DepositNumber.ToString() + "'," + _deposit.Amount + ",'" + _deposit.Date + "'," + _deposit.TerminalId + "," + _deposit.UserId + "," + _deposit.EventId + ");SELECT LAST_INSERT_ID();", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -439,7 +439,9 @@ namespace wscore.Services
                 _event.UserId = Convert.ToInt16(deposit.UserId);
                 _event.TerminalId = Convert.ToInt16(deposit.TerminalId);
                 _event.EventTypeId = 1;
+                _event.Date = deposit.Date;
                 _event = EventFromTerminalInsert(_event);
+                
                 deposit.EventId = _event.EventId;
                 deposit = DepositInsert(deposit);
                 DepositNotesInsert(deposit);
@@ -463,6 +465,7 @@ namespace wscore.Services
                 _event.UserId = box.UserId;
                 _event.TerminalId = Convert.ToInt16(box.TerminalId);
                 _event.EventTypeId = 25;
+                _event.Date = box.Date;
                 _event = EventFromTerminalInsert(_event);
                 box.EventId = _event.EventId;
 
@@ -563,16 +566,16 @@ namespace wscore.Services
 
         }
 
-        public List<UserReturn> getTerminalUsers(int terminalId)
+        public List<UserReturn> getTerminalUsers(UserStatus status)
         {
             List<UserReturn> _listUsers = new List<UserReturn>();
-            if (terminalId != null)
+            if (status != null)
             {
                 using (MySqlConnection conn = GetConnection())
                 {
                     conn.Open();
                     MySqlCommand cmd = new MySqlCommand("select ut.UserId, u.UserName, u.FirstName , u.LastName, u.Code , c.Name from UserTerminal ut join User u on u.UserId = ut.UserId" +
-                        " join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where TerminalId = " + terminalId.ToString() + ";UPDATE Terminal SET LastComunication = NOW()  WHERE TerminalId = " + terminalId.ToString() + ";" , conn);
+                        " join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where TerminalId = " + status.TerminalId.ToString() + ";UPDATE Terminal SET LastComunication = '" + status.Date + "' WHERE TerminalId = " + status.TerminalId.ToString() + ";" , conn);
 
                     using (var reader = cmd.ExecuteReader())
                     {
