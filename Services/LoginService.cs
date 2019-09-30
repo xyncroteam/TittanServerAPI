@@ -104,7 +104,7 @@ namespace wscore.Services
 
             using (MySqlConnection conn = GetConnection())
             {
-                conn.Open();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                conn.Open();
                 MySqlCommand cmd = new MySqlCommand("select * from User a join UserGroup b on a.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where UserName='" + userName + "' and Password='" + password + "'", conn);
 
                 using (var reader = cmd.ExecuteReader())
@@ -211,8 +211,38 @@ namespace wscore.Services
             }
             return user;
         }
+        private User GetUserByUsername(string userName)
+        {
+            User user = null;
 
-        private bool GetUserByUsername(string userName)
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("select * from User u join UserGroup b on u.UserId = b.UserId join `Group` c on b.GroupId = c.GroupId where UserName='" + userName + "'", conn);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        user = new User();
+                        user.Id = Convert.ToInt32(reader["UserId"]);
+                        user.Username = reader["UserName"].ToString();
+                        user.FirstName = reader["FirstName"].ToString();
+                        user.LastName = reader["LastName"].ToString();
+                        user.Email = reader["Email"].ToString();
+                        user.Group = reader["Name"].ToString();
+                        user.Key = reader["Key"].ToString();
+                        user.Password = reader["Password"].ToString();
+                        //   user.PasswordHash = (byte[])reader["Password"];
+                        // user.PasswordHash = reader.GetByte("Password").t;
+
+                    }
+                }
+            }
+            return user;
+        }
+
+        private bool UserByUsernameExist(string userName)
         {
             User user = null;
 
@@ -349,6 +379,48 @@ namespace wscore.Services
             }
         }
 
+        private static bool IsPasswordHashSame(string password, byte[] storedHash, string storedKey)
+        {
+            if (password == null)
+            {
+                throw new ArgumentNullException("password");
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new ArgumentException("Username can not be empty or contain whitespace ");
+            }
+            //if (storedHash.Length != 64)
+            //{
+            //    throw new ArgumentException("Invalid password ");
+            //}
+            //if (storedKey.Length != 128)
+            //{
+            //    throw new ArgumentException("Invalid password ");
+            //}
+
+            byte[] _storedkey = Encoding.UTF8.GetBytes(storedKey);
+            // byte[] pass = Encoding.UTF8.GetBytes(storedHash);
+
+            byte[] _storedkey1 = Encoding.Unicode.GetBytes(storedKey);
+            // byte[] pass1 = Encoding.Unicode.GetBytes(storedHash);
+
+            using (var hmacValue = new System.Security.Cryptography.HMACSHA512())
+            {
+                // var computedHash = hmacValue.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                var computedHash = hmacValue.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                // string computedHashPass = BitConverter.ToString(computedHash);
+
+                for (int i = 0; i < computedHash.Length; i++)
+                {
+                    if (computedHash[i] != storedHash[i])
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         #endregion
 
         public LoginService(IOptions<AppSettings> appSettings)
@@ -357,14 +429,25 @@ namespace wscore.Services
         }
         public User Authenticate(string username, string password)
         {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                throw new ArgumentException("Username or password does not exist ");
+            }
 
-            var user = GetUser(username, password);
+            // var user = GetUser(username, password);
+            var user = GetUserByUsername(username);
 
             if (user == null)
-                return null;
-            //here i need to add to verify if password is equal to hash password
+            {
+                throw new ArgumentException("User not found ");
+            }
 
+            user.Password = Utils.DecryptString(user.Password, user.Key);
 
+            if (!String.Equals(password, user.Password))
+            {
+                throw new ArgumentException("Username or password invalid ");
+            }           
             // authentication successful so generate jwt token
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
@@ -386,8 +469,8 @@ namespace wscore.Services
             user.Password = null;
 
             return user;
+           
         }
-
 
         public List<UserReturn> Users()
         {
@@ -455,11 +538,16 @@ namespace wscore.Services
                     User user = new User();
                     Utils.Map(user, statusParam, "Create");
 
-                    byte[] passwordHashed, passwordKey;
-                    CreateUserPassword_Hash(statusParam.Password, out passwordHashed, out passwordKey);
+                    // byte[] passwordHashed, passwordKey;
+                    var key = Utils.GenerateKey();
 
-                    user.Password = BitConverter.ToString(passwordHashed);
-                    user.Key = BitConverter.ToString(passwordKey);
+                    //  CreateUserPassword_Hash(statusParam.Password, out passwordHashed, out passwordKey);
+                    user.Password = Utils.EncryptString(user.Password, key);
+                    user.Key = key;
+                    //user.Password = BitConverter.ToString(passwordHashed);
+                    // user.Password = passwordHash;
+
+                    //user.Key = BitConverter.ToString(passwordKey);
                     var code = GenerateNewRandomCode();
                     bool value = CodeExist(int.Parse(code));
 
@@ -548,43 +636,29 @@ namespace wscore.Services
                 bool usernameExist = false;
                 bool emailExist = false;
 
-              //  Unique userUnique = isUserExist(statusParam.Username, statusParam.Email);
+                //  Unique userUnique = isUserExist(statusParam.Username, statusParam.Email);
 
                 if (_updateUser.Username != user.Username)
                 {
-                    usernameExist = GetUserByUsername(statusParam.Username); 
+                    usernameExist = UserByUsernameExist(statusParam.Username);
                 }
                 if (_updateUser.Email != user.Email)
                 {
-                    emailExist = GetUserByEmail(statusParam.Email); 
+                    emailExist = GetUserByEmail(statusParam.Email);
                 }
                 if (usernameExist || emailExist)
                 {
                     throw new AppExceptions("Username or email already exist");
-                } 
+                }
                 Rols groupValue = new Rols();
                 groupValue.RolName = statusParam.Group;
                 var groupExist = getRolByName(groupValue);
 
-                if(groupExist == null)
+                if (groupExist == null)
                 {
                     throw new AppExceptions("Group does not exist");
                 }
-
-               /* if (_updateUser.Username != user.Username || _updateUser.Email != user.Email)
-                {
-                    if (!userUnique.usernameUnique || !userUnique.emailUnique)
-                    {
-                        throw new AppExceptions("Username or email already exist");
-                    }
-                    else
-                    {
-                        if (groupExist == null)
-                        {
-                            throw new AppExceptions("Group does not exist");
-                        }
-                    }
-                } */
+                
                 Utils.Map(user, statusParam, "Update");
                 string requestCode = _updateUser.accessCode.ToString();
                 if (user.accessCode != _updateUser.accessCode)
@@ -604,12 +678,23 @@ namespace wscore.Services
 
                 if (!string.IsNullOrWhiteSpace(statusParam.Password))
                 {
-                    byte[] passwordHashed, passwordKey;
-                    CreateUserPassword_Hash(statusParam.Password, out passwordHashed, out passwordKey);
+                    var storedPassword = Utils.DecryptString(user.Password, user.Key);
 
-                    user.Password = BitConverter.ToString(passwordHashed);
-                    user.Key = BitConverter.ToString(passwordKey);
+                    if (!String.Equals(statusParam.Password, storedPassword))
+                    {
+                        var key = Utils.GenerateKey();
+                        user.Password = Utils.EncryptString(statusParam.Password, key);
+                        user.Key = key;
+                    }
                 }
+                /*   if (!string.IsNullOrWhiteSpace(statusParam.Password))
+                   {
+                       byte[] passwordHashed, passwordKey;
+                       CreateUserPassword_Hash(statusParam.Password, out passwordHashed, out passwordKey);
+
+                       //user.Password = BitConverter.ToString(passwordHashed);
+                       user.Key = BitConverter.ToString(passwordKey);
+                   } */
                 UpdateUserSQL(user);
             }
 
@@ -622,6 +707,7 @@ namespace wscore.Services
             using (MySqlConnection conn = GetConnection())
             {
                 conn.Open();
+                //    MySqlCommand cmd = new MySqlCommand("INSERT INTO tittan.User (FirstName, LastName, UserName, tittan.User.Password,  Email, Code) VALUES ('" + _insert.FirstName.ToString() + "' ,'" + _insert.LastName.ToString() + "','" + _insert.Username.ToString() + "','" + _insert.Password + "','" + _insert.Email.ToString() + "','" + _insert.accessCode + "'); SELECT LAST_INSERT_ID(); ", conn);
                 MySqlCommand cmd = new MySqlCommand("INSERT INTO tittan.User (FirstName, LastName, UserName, tittan.User.Password, tittan.User.Key, Email, Code) VALUES ('" + _insert.FirstName.ToString() + "' ,'" + _insert.LastName.ToString() + "','" + _insert.Username.ToString() + "','" + _insert.Password + "','" + _insert.Key + "','" + _insert.Email.ToString() + "','" + _insert.accessCode + "'); SELECT LAST_INSERT_ID(); ", conn);
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -663,7 +749,7 @@ namespace wscore.Services
         //later i need to fix it because the return is not rigth should return or object of all bool
         public bool isUserUnique(string username, string email)
         {
-            var isUniqueUsername = GetUserByUsername(username);
+            var isUniqueUsername = UserByUsernameExist(username);
             var isUniqueEmail = GetUserByEmail(email);
 
             if (isUniqueUsername == true && isUniqueEmail == true)
@@ -686,14 +772,14 @@ namespace wscore.Services
         public Unique isUserExist(string username, string email)
         {
             var unique = new Unique();
-            var isUniqueUsername = GetUserByUsername(username);
+            var isUniqueUsername = UserByUsernameExist(username);
             var isUniqueEmail = GetUserByEmail(email);
 
-            if (isUniqueUsername != null)
+            if (isUniqueUsername != true)
             {
                 unique.usernameUnique = false;
             }
-            if (isUniqueEmail != null)
+            if (isUniqueEmail != true)
             {
                 unique.emailUnique = false;
             }

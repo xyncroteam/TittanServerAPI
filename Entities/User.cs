@@ -10,6 +10,7 @@ namespace wscore.Entities
         public string LastName { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }    //used for password hash
+        public byte[] PasswordHash { get; set; }
         public string Key { get; set; }         //used for passwordsalt
         public string Email { get; set; }
         public string Token { get; set; }
